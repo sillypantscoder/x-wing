@@ -22,8 +22,8 @@ public class Maneuver {
 		// 1. Check if the ship is stressed
 		if (ship.isStressed() && this.stress >= 1) return Optional.empty(); // aaaa!
 		// 2. Get the new location of the ship
-		Point newLocation = ship.pos.moveDirection(ship.r + (this.angle / 2), this.speed * 50);
-		Rect newRect = new Rect(newLocation.x, newLocation.y, ship.type.size, ship.r + angle);
+		Point newLocation = ship.pos.moveDirection(ship.rotation + (this.angle / 2), this.speed * 50);
+		Rect newRect = new Rect(newLocation.x, newLocation.y, ship.type.size, ship.rotation + angle);
 		for (int i = 0; i < ship.game.ships.size(); i++) {
 			Ship other = ship.game.ships.get(i);
 			if (other == ship) continue;
@@ -34,7 +34,7 @@ public class Maneuver {
 		}
 		return Optional.ofNullable(() -> {
 			ship.pos = newLocation;
-			ship.r += angle;
+			ship.rotation += angle;
 			ship.stress += stress;
 			if (ship.stress < 0) ship.stress = 0;
 		});
@@ -43,13 +43,13 @@ public class Maneuver {
 		return "Maneuver { speed: " + speed + ", angle: " + angle + ", stress: " + stress + " }";
 	}
 	public static Maneuver[] parseSet(String set) {
-		// The set will look like this:				This will map to the list of all possible maneuvers, which looks like this:
-		// /-----\									  /-----\
-		// |  +  |		(the +, -, and = indicate	4 |<\^/>| (< and > are right angle turns)
-		// |==-==|		 whether to add or remove	3 |<\^/>| (\ and / are 45-degree turns)
-		// |==-==|		 a stress token)			2 |<\^/>| (^ is forwards)
-		// | --- |									1 |<\^/>| (numbers on left indicate speed)
-		// \-----/									  \-----/
+		// The set will look like this:             This will map to the list of all possible maneuvers, which looks like this:
+		// /-----\                                    /-----\
+		// |  +  |     (the +, -, and = indicate    4 |<\^/>|   (< and > are right angle turns)
+		// |=====|      whether to add or remove    3 |<\^/>|   (\ and / are 45-degree turns)
+		// |==-==|      a stress token)             2 |<\^/>|   (^ is forwards)
+		// | --- |                                  1 |<\^/>|   (numbers on left indicate speed)
+		// \-----/                                    \-----/
 		// To parse this, we need to go through each line of the string in reverse order.
 		ArrayList<Maneuver> maneuvers = new ArrayList<Maneuver>();
 		String[] rows = set.split("\n");
@@ -63,7 +63,9 @@ public class Maneuver {
 				// Extract the stress value.
 				int stress = 0;
 				if (m == '+') stress = 1;
-				if (m == '-') stress = -1;
+				else if (m == '-') stress = -1;
+				else if (m == '=') stress = 0;
+				else throw new RuntimeException("Bad maneuver char '" + m + "' on line " + i + " at position " + c + "!!!!!!!!!!!!!!!");
 				// Extract the angle.
 				int angle = (c - 2) * 45;
 				// Register the maneuver.

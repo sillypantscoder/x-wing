@@ -51,8 +51,8 @@ public class Utils {
 	public static boolean rotatedRectanglesCollide(double x1, double y1, double w1, double h1, double r1, double x2, double y2, double w2, double h2, double r2) {
 		Area area1 = new Area(new Rectangle2D.Double(x1, y1, w1, h1));
 		Area area2 = new Area(new Rectangle2D.Double(x2, y2, w2, h2));
-		area1.transform(AffineTransform.getRotateInstance(Math.toRadians(r1), x1 + w1 / 2, y1 + h1 / 2));
-		area2.transform(AffineTransform.getRotateInstance(Math.toRadians(r2), x2 + w2 / 2, y2 + h2 / 2));
+		area1.transform(AffineTransform.getRotateInstance(Math.toRadians(r1), x1 + (w1 / 2), y1 + (h1 / 2)));
+		area2.transform(AffineTransform.getRotateInstance(Math.toRadians(r2), x2 + (w2 / 2), y2 + (h2 / 2)));
 		Area collision = new Area(area1);
 		collision.intersect(area2);
 		return !collision.isEmpty();

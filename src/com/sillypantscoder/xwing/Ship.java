@@ -9,7 +9,7 @@ public class Ship {
 	 * The location of the center of this ship
 	 */
 	public Point pos;
-	public int r;
+	public int rotation;
 	// Tokens
 	public int stress;
 	// Constructor
@@ -17,11 +17,11 @@ public class Ship {
 		this.game = game;
 		this.type = type;
 		this.pos = pos;
-		this.r = r;
+		this.rotation = r;
 		this.stress = 0;
 	}
 	public Rect getRect() {
-		return new Rect(this.pos.x, this.pos.y, this.type.size, this.r);
+		return new Rect(this.pos.x, this.pos.y, this.type.size, this.rotation);
 	}
 	public boolean collidesWith(Rect other) {
 		return this.getRect().collidesWith(other);
@@ -30,7 +30,7 @@ public class Ship {
 		return this.stress >= 1;
 	}
 	public String toString() {
-		return "Ship\n\t| type: " + type.toString().replace("\n", "\n\t| ") + "\n\t| pos: " + pos.toString() + "\n\t| rotation: " + r + "\n\t| stress: " + stress;
+		return "Ship\n\t| type: " + type.toString().replace("\n", "\n\t| ") + "\n\t| pos: " + pos.toString() + "\n\t| rotation: " + rotation + "\n\t| stress: " + stress;
 	}
 	public static void main(String[] args) {
 		Game game = new Game();

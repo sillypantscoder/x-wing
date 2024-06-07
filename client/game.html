@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+html {
+	height: 100%;
+}
+body {
+	height: 100%;
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+}
+.map {
+	flex-grow: 1;
+	position: relative;
+	/* TODO: Add image for background */
+	background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><rect x='0' y='0' width='10' height='10' fill='gray' stroke-width='0.3' stroke='slategray' /></svg>");
+	background-size: 10vw;
+}
+.map > * {
+	position: absolute;
+	--x: 0px;
+	--y: 0px;
+	--size: 20px;
+	--rot: 0deg;
+	top: calc(var(--y) - calc(var(--size) / 2));
+	left: calc(var(--x) - calc(var(--size) / 2));
+	width: calc(var(--size) * 1);
+	height: calc(var(--size) * 1);
+	transform: rotate(var(--rot));
+}
+.status {
+	text-align: center;
+	padding: 1em;
+}
+		</style>
+	</head>
+	<body>
+		<div class="map"></div>
+		<div class="status"></div>
+		<script src="collide.js"></script>
+		<script src="game.js"></script>
+	</body>
+</html>

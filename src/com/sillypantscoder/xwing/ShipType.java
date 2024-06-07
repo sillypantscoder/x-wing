@@ -1,5 +1,11 @@
 package com.sillypantscoder.xwing;
 
+// import java.io.File;
+
+// import com.fasterxml.jackson.core.JsonFactory;
+// import com.fasterxml.jackson.core.json.JsonReadFeature;
+// import com.fasterxml.jackson.databind.ObjectMapper;
+
 public class ShipType {
 	// stuff about the ship
 	public String shipName;
@@ -29,4 +35,9 @@ public class ShipType {
 			"\n\t| defend: " + this.defendAmount + "\n\t| hull: " + this.hullValue + "\n\t| shield: " + this.shieldValue + "\n\t| maneuvers: " + this.maneuvers.length
 			+ "\n\t| size: " + this.size;
 	}
+	// public static void main(String[] args) throws Exception {
+	// 	ObjectMapper mapper = new ObjectMapper();
+	// 	ShipType value = mapper.readValue(new File(args[0]), ShipType.class);
+	// 	System.out.println(value.toString());
+	// }
 }

@@ -1,0 +1,17 @@
+YT-1300
+Han Solo
+Skill 9, Attack 3, Defend 1, Hull 8, Shield 5
+  +
++===+
+==-==
+ ---
+Size 20
+
+A Second Ship (for testing)
+Somebody
+Skill 10000, Attack 700, Defend 0, Hull 1, Shield 800
+  =
+=---=
+-----
+ ---
+Size 20

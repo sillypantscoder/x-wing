@@ -15,7 +15,7 @@ public class HttpServer {
 			server.createContext("/", new ProxyHttpHandler(handler));
 			server.setExecutor(java.util.concurrent.Executors.newFixedThreadPool(3));
 			server.start();
-			System.out.println("Server started at: https://" + addr.getHostName() + ":" + addr.getPort() + "/");
+			System.out.println("Server started at: http://" + addr.getHostName() + ":" + addr.getPort() + "/");
 		} catch (IOException e) {
 			System.out.println("Server failed to start!!!!!");
 			e.printStackTrace();
