@@ -3,6 +3,11 @@ if (_map == null || !(_map instanceof HTMLDivElement)) throw new Error("Map elem
 /** @type {HTMLDivElement} */
 var map = _map;
 
+var _status = document.querySelector(".status")
+if (_status == null || !(_status instanceof HTMLDivElement)) throw new Error("Status element is missing")
+/** @type {HTMLDivElement} */
+var statusBar = _status;
+
 /**
  * @param {number} x
  * @param {number} y
@@ -204,10 +209,16 @@ class Ship {
 		this.elm = document.createElement("div")
 		map.appendChild(this.elm)
 		this.updateStyle()
+		/** @type {Menu | null} */
+		this.menu = null
 		// Click listener
 		var ship = this
 		// note: the third parameter should be called "early phase"
 		this.elm.addEventListener("mousedown", (e) => {
+			if (menu != null) {
+				menu.closeMenu()
+				menu = null
+			}
 			ship.click()
 			e.stopPropagation()
 		}, true)
@@ -216,30 +227,63 @@ class Ship {
 		this.elm.setAttribute("style", `background: orange; --x: ${(this.x * 2) + viewportPos.x}px; --y: ${(this.y * 2) + viewportPos.y}px; --rot: ${this.rot}deg; --size: ${this.size}px;`)
 	}
 	click() {
-		menuShip = this
+		this.menu = new BlankMenu(this)
 	}
-	closeMenu() {}
 	isStressed() {
 		return this.stress >= 1
 	}
 }
+class Menu {
+	/**
+	 * @param {Ship} ship
+	 */
+	constructor(ship) {
+		/** @type {Ship} */
+		this.ship = ship
+		menu = this
+		// Element
+		this.elm = document.createElement("div")
+		this.elm.classList.add("menu")
+		this.ship.elm.appendChild(this.elm)
+		this.main = document.createElement("div")
+		this.elm.appendChild(this.main)
+	}
+	closeMenu() {
+		this.ship.menu = null
+		this.elm.remove()
+	}
+}
+class BlankMenu extends Menu {
+	/**
+	 * @param {Ship} ship
+	 */
+	constructor(ship) {
+		super(ship)
+		this.main.setAttribute("style", `min-width: 20ch;`)
+		this.main.innerText = "No actions are available for this ship."
+	}
+}
+
+/** @type {"planning" | "moving" | "combat"} */
+var gamePhase = "planning"
+/** @type {Player[]} */
+var players = []
 
 /** @type {Ship[]} */
 var ships = []
-/** @type {Ship | null} */
-var menuShip = null
+/** @type {Menu | null} */
+var menu = null
 
 /** @type {{ x: number, y: number }} */
 var viewportPos = { x: 0, y: 0 }
 /** @type {{ x: number, y: number } | null} */
 var dragLoc = null
 map.addEventListener("mousedown", (e) => {
-	if (menuShip != null) {
-		menuShip.closeMenu()
-		menuShip = null
-	} else {
-		dragLoc = { x: e.clientX, y: e.clientY }
+	if (menu != null) {
+		menu.closeMenu()
+		menu = null
 	}
+	dragLoc = { x: e.clientX, y: e.clientY }
 })
 map.addEventListener("mousemove", (e) => {
 	if (dragLoc != null) {
@@ -282,11 +326,57 @@ function parseShipList(data) {
  * @type {ShipType[]}
  */
 var ship_types = []
+
+var my_name = location.search.substring(1)
+/**
+ * @type {Player | null}
+ */
+var me = null
+
+function setStatusBar() {
+	[...statusBar.children].forEach((e) => e.remove())
+	if (gamePhase == "planning") {
+		// add ships
+		for (var i = 0; i < ship_types.length; i++) {
+			var type = ship_types[i];
+			var e = document.createElement("button")
+			statusBar.appendChild(e)
+			e.innerText = type.shipName + " (" + type.pilotName + ")";
+			((i) => { e.addEventListener("click", () => {
+				post("/add_ship", my_name + "\n" + i)
+			}) })(i);
+		}
+	}
+}
+
+/**
+ * @param {string} data
+ */
+function handleEventResponse(data) {
+	var items = data.split("\n\n").map((x) => x.split("\n"));
+	for (var i = 0; i < items.length; i++) {
+		if (items[i][0] == "addplayer") {
+			var newPlayer = new Player(items[i][1], [])
+			players.push(newPlayer)
+			if (newPlayer.name == my_name && me == null) {
+				me = newPlayer
+			}
+		} else if (items[i][0] == "addship") {
+			var target = players.find((v) => v.name == items[i][1])
+			if (target == null) throw new Error("Player with name '" + items[i][1] + "' not found!")
+			var type = ship_types[Number(items[i][2])]
+			var newShip = new Ship(Number(items[i][3]), Number(items[i][4]), Number(items[i][5]), type)
+			target.ships.push(newShip)
+		}
+	}
+}
+async function eventCheckerLoop() {
+	while (true) {
+		get("/events/" + my_name).then(handleEventResponse)
+		await new Promise((resolve) => setTimeout(resolve, 1000))
+	}
+}
 get("ships.txt").then((x) => {
 	ship_types = parseShipList(x)
-	// make a ship
-	var ship = new Ship(100, 100, 0, ship_types[0])
-	me.ships.push(ship)
-})
-
-var me = new Player("Meeeee", [])
+	setStatusBar()
+}).then(eventCheckerLoop)

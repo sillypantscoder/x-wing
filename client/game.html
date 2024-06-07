@@ -17,6 +17,7 @@ body {
 	/* TODO: Add image for background */
 	background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><rect x='0' y='0' width='10' height='10' fill='gray' stroke-width='0.3' stroke='slategray' /></svg>");
 	background-size: 10vw;
+	overflow: hidden;
 }
 .map > * {
 	position: absolute;
@@ -30,6 +31,31 @@ body {
 	height: calc(var(--size) * 1);
 	transform: rotate(var(--rot));
 }
+.menu {
+	position: absolute;
+	top: 100%;
+	left: 50%;
+	display: flex;
+	justify-content: center;
+}
+.menu > div {
+	position: absolute;
+	margin-top: 1em;
+	padding: 1em;
+	border-radius: 0.5em;
+	background: white;
+}
+.menu > div::before {
+	content: "";
+	position: absolute;
+	width: 1em;
+	height: 1em;
+	top: -0.5em;
+	left: calc(50% - 0.5em);
+	background: white;
+	transform: rotate(45deg);
+}
+
 .status {
 	text-align: center;
 	padding: 1em;
