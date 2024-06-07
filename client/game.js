@@ -14,6 +14,36 @@ function movePoint(x, y, deg, dist) {
 	var ry = y + (dist * Math.sin(deg * (Math.PI / 180)));
 	return { x: rx, y: ry };
 }
+/**
+ * @param {string} path
+ * @returns {Promise<string>}
+ */
+function get(path) {
+	return new Promise((resolve, reject) => {
+		var x = new XMLHttpRequest()
+		x.open("GET", path)
+		x.addEventListener("loadend", () => {
+			if (x.status == 200) resolve(x.responseText)
+			else reject(x.status)
+		})
+		x.send()
+	})
+}
+/**
+ * @param {string} path
+ * @param {string} body
+ * @returns {Promise<void>}
+ */
+function post(path, body) {
+	return new Promise((resolve) => {
+		var x = new XMLHttpRequest()
+		x.open("POST", path)
+		x.addEventListener("loadend", () => {
+			resolve()
+		})
+		x.send(body)
+	})
+}
 
 class Player {
 	/**
@@ -179,13 +209,16 @@ class Ship {
 		// note: the third parameter should be called "early phase"
 		this.elm.addEventListener("mousedown", (e) => {
 			ship.click()
-			e.preventDefault()
+			e.stopPropagation()
 		}, true)
 	}
 	updateStyle() {
 		this.elm.setAttribute("style", `background: orange; --x: ${(this.x * 2) + viewportPos.x}px; --y: ${(this.y * 2) + viewportPos.y}px; --rot: ${this.rot}deg; --size: ${this.size}px;`)
 	}
-	click() {}
+	click() {
+		menuShip = this
+	}
+	closeMenu() {}
 	isStressed() {
 		return this.stress >= 1
 	}
@@ -193,13 +226,20 @@ class Ship {
 
 /** @type {Ship[]} */
 var ships = []
+/** @type {Ship | null} */
+var menuShip = null
 
 /** @type {{ x: number, y: number }} */
 var viewportPos = { x: 0, y: 0 }
 /** @type {{ x: number, y: number } | null} */
 var dragLoc = null
 map.addEventListener("mousedown", (e) => {
-	dragLoc = { x: e.clientX, y: e.clientY }
+	if (menuShip != null) {
+		menuShip.closeMenu()
+		menuShip = null
+	} else {
+		dragLoc = { x: e.clientX, y: e.clientY }
+	}
 })
 map.addEventListener("mousemove", (e) => {
 	if (dragLoc != null) {
@@ -238,24 +278,15 @@ function parseShipList(data) {
 	}
 	return parsed
 }
-var ship_types = parseShipList(`YT-1300
-Han Solo
-Skill 9, Attack 3, Defend 1, Hull 8, Shield 5
-  +
-+===+
-==-==
- ---
-Size 20
+/**
+ * @type {ShipType[]}
+ */
+var ship_types = []
+get("ships.txt").then((x) => {
+	ship_types = parseShipList(x)
+	// make a ship
+	var ship = new Ship(100, 100, 0, ship_types[0])
+	me.ships.push(ship)
+})
 
-A Second Ship (for testing)
-Somebody
-Skill 10000, Attack 700, Defend 0, Hull 1, Shield 800
-  =
-=---=
------
- ---
-Size 20`)
-
-var me = new Player("Meeeee", [
-	new Ship(100, 100, 0, ship_types[0])
-])
+var me = new Player("Meeeee", [])

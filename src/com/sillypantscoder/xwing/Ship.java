@@ -34,13 +34,14 @@ public class Ship {
 	}
 	public static void main(String[] args) {
 		Game game = new Game();
+		ShipType testship = ShipType.getTypes()[0];
 		// Create a ship
-		Ship ship = new Ship(game, Ships.TEST_SHIP, new Point(0, 0), 0);
+		Ship ship = new Ship(game, testship, new Point(0, 0), 0);
 		game.ships.add(ship);
 		System.out.println(ship);
 		System.out.println(ship.getRect());
 		// Create another ship
-		Ship ship2 = new Ship(game, Ships.TEST_SHIP, new Point(30, -50), 45);
+		Ship ship2 = new Ship(game, testship, new Point(30, -50), 45);
 		game.ships.add(ship2);
 		System.out.println(ship2.getRect());
 		// List maneuvers

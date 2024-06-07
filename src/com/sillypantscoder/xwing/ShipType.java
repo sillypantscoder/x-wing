@@ -1,5 +1,8 @@
 package com.sillypantscoder.xwing;
 
+import java.util.Arrays;
+import java.util.stream.Stream;
+
 // import java.io.File;
 
 // import com.fasterxml.jackson.core.JsonFactory;
@@ -40,4 +43,18 @@ public class ShipType {
 	// 	ShipType value = mapper.readValue(new File(args[0]), ShipType.class);
 	// 	System.out.println(value.toString());
 	// }
+	public static ShipType[] getTypes() {
+		String[] info = Utils.readFile("ships.txt").split("\n\n");
+		ShipType[] parsed = new ShipType[info.length];
+		for (var i = 0; i < info.length; i++) {
+			String[] lines = info[i].split("\n");
+			String shipname = lines[0];
+			String pilotname = lines[1];
+			Integer[] points = Stream.of(lines[2].split(", ")).map((x) -> Integer.parseInt(x.split(" ")[1])).toArray(Integer[]::new);
+			Maneuver[] maneuvers = Maneuver.parseSet(String.join("\n", Arrays.copyOfRange(lines, 3, lines.length - 1)));
+			int size = Integer.parseInt(lines[lines.length - 1].substring(5));
+			parsed[i] = new ShipType(shipname, pilotname, points[0], points[1], points[2], points[3], points[4], maneuvers, size);
+		}
+		return parsed;
+	}
 }

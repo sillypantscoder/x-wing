@@ -56,7 +56,7 @@ public class Maneuver {
 		int speed = 1;
 		for (int i = rows.length - 1; i >= 0; i--) {
 			// Now go through the columns.
-			for (int c = 0; c < 5; c++) {
+			for (int c = 0; c < rows[i].length(); c++) {
 				// Check if there is a maneuver here.
 				char m = rows[i].charAt(c);
 				if (m == ' ') continue;
