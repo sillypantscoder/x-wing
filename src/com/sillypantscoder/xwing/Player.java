@@ -38,7 +38,7 @@ public class Player {
 			this.fire("addplayer\n" + p.name);
 			for (int s = 0; s < p.ships.length; s++) {
 				Ship ship = p.ships[s];
-				int type = Arrays.asList(ShipType.getTypes()).indexOf(ship.type);
+				int type = Arrays.asList(ShipType.types).indexOf(ship.type);
 				this.fire("addship\n" + p.name + "\n" + type + "\n" + ship.pos.x + "\n" + ship.pos.y + "\n" + ship.rotation);
 			}
 		}

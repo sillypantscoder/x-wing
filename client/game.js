@@ -1,3 +1,7 @@
+// --------------------------------- GLOBALS ---------------------------------
+
+const GRIDSIZE = 50;
+
 var _map = document.querySelector(".map")
 if (_map == null || !(_map instanceof HTMLDivElement)) throw new Error("Map element is missing")
 /** @type {HTMLDivElement} */
@@ -7,6 +11,34 @@ var _status = document.querySelector(".status")
 if (_status == null || !(_status instanceof HTMLDivElement)) throw new Error("Status element is missing")
 /** @type {HTMLDivElement} */
 var statusBar = _status;
+
+/** @type {"planning" | "moving" | "combat"} */
+var gamePhase = "planning"
+/** @type {Player[]} */
+var players = []
+
+/** @type {Ship[]} */
+var ships = []
+/** @type {Menu | null} */
+var activeMenu = null
+
+/** @type {{ x: number, y: number }} */
+var viewportPos = { x: 0, y: 0 }
+/** @type {{ x: number, y: number } | null} */
+var dragLoc = null
+
+/**
+ * @type {ShipType[]}
+ */
+var ship_types = []
+
+var my_name = location.search.substring(1)
+/**
+ * @type {Player | null}
+ */
+var me = null
+
+// ------------------------------- END GLOBALS -------------------------------
 
 /**
  * @param {number} x
@@ -18,6 +50,12 @@ function movePoint(x, y, deg, dist) {
 	var rx = x + (dist * Math.cos(deg * (Math.PI / 180)));
 	var ry = y + (dist * Math.sin(deg * (Math.PI / 180)));
 	return { x: rx, y: ry };
+}
+/**
+ * @param {{ x: number,  y: number }} pos
+ */
+function formatPos(pos) {
+	return `${(pos.x * 2) + viewportPos.x} ${(pos.y * 2) + viewportPos.y}`
 }
 /**
  * @param {string} path
@@ -109,20 +147,44 @@ class Maneuver {
 		/** @type {number} */
 		this.stress = stress;
 	}
+
 	/**
 	 * @param {Ship} ship
 	 */
-	execute(ship) {
-		// 1. Check if the ship is stressed
-		if (ship.isStressed() && this.stress >= 1) return null; // aaaa!
-		// 2. Get the new location of the ship
-		var newLocation = movePoint(ship.x, ship.y, ship.rot + (this.angle / 2), this.speed * 50);
-		var n = {
+	compute(ship) {
+		// Get the new location of the ship
+		//  The angle is divided by two because the angle defines how much the
+		//  ship turns, but we're computing the destination position. If you turn
+		//  90° then you are moving along a circular arc and will end up at half
+		//  that angle.... maybe.
+		//  Yes, that's totally right.
+		let newLocation = movePoint(ship.x, ship.y, ship.rot + (this.angle / 2), this.speed * GRIDSIZE);
+		let n = {
 			cx: newLocation.x + (ship.type.size / 2),
 			cy: newLocation.y + (ship.type.size / 2),
 			size: ship.type.size,
 			angle: ship.rot + this.angle
 		}
+		return {
+			x: newLocation.x,
+			y: newLocation.y,
+			angle: ship.rot + this.angle,
+			isInvalid: this.checkForCollisions(ship, n) || (ship.isStressed() && this.stress >= 1),
+			exec: () => {
+				ship.x = newLocation.x;
+				ship.y = newLocation.y;
+				ship.rot += this.angle;
+				ship.stress += this.stress;
+				if (ship.stress < 0) ship.stress = 0;
+			}
+		}
+	}
+	/**
+	 * @param {Ship} ship
+	 * @param {{ cx: number, cy: number, size: number, angle:number }} checkRect
+	 */
+	checkForCollisions(ship, checkRect) {
+		const n = checkRect;
 		for (var i = 0; i < ships.length; i++) {
 			var other = ships[i];
 			if (other == ship) continue;
@@ -134,15 +196,41 @@ class Maneuver {
 				angle: other.rot + this.angle
 			}
 			var collide = rotatedRectanglesCollide(n.cx, n.cy, n.size, n.size, n.angle, o.cx, o.cy, o.size, o.size, o.angle)
-			if (collide) return null; // bonk!
+			if (collide) return true // bonk!
 		}
-		return () => {
-			ship.x = newLocation.x;
-			ship.y = newLocation.y;
-			ship.rot += this.angle;
-			ship.stress += this.stress;
-			if (ship.stress < 0) ship.stress = 0;
-		};
+		return false
+	}
+	/**
+	 * @param {Ship} ship
+	 * @param {string} color
+	 */
+	createPreview(ship, color) {
+		var data = this.compute(ship)
+		var _speed = this.speed
+		// Preview square
+		var preview_square = document.createElement("div")
+		preview_square.classList.add("preview")
+		map.appendChild(preview_square)
+		function updateSquareStyle() {
+			var styles = `--x: ${(data.x * 2) + viewportPos.x}px; --y: ${(data.y * 2) + viewportPos.y}px; --size: ${ship.type.size}px; --rot: ${data.angle}deg; box-shadow: 0 0 5px 5px ${color};`
+			preview_square.setAttribute("style", styles);
+		}
+		updateSquareStyle()
+		preview_square.addEventListener("updatestyle", updateSquareStyle)
+		// Preview line
+		var preview_line = document.createElementNS("http://www.w3.org/2000/svg", "svg")
+		map.appendChild(preview_line)
+		preview_line.setAttribute("style", `overflow: visible;`)
+		preview_line.classList.add("preview")
+		function updateLineStyle() {
+			var shiptarget = movePoint(data.x, data.y, data.angle + 180, ship.size * 0.5 * 0.8)
+			var mid_pos = movePoint(ship.x, ship.y, ship.rot, _speed * 30)
+			preview_line.innerHTML = `<path d="M ${formatPos(ship)} Q ${formatPos(mid_pos)} ${formatPos(shiptarget)}" fill="none" stroke-width="3" stroke="${color}" style="transform: translate(6px, 6px); opacity: 0.5;" />`;
+		}
+		updateLineStyle()
+		preview_line.addEventListener("updatestyle", updateLineStyle)
+		// Finish
+		return [preview_square, preview_line]
 	}
 	toString() {
 		return "Maneuver { speed: " + this.speed + ", angle: " + this.angle + ", stress: " + this.stress + " }";
@@ -190,6 +278,7 @@ class Ship {
 	 * @param {ShipType} type
 	 */
 	constructor(x, y, rot, type) {
+		var ship = this
 		/** @type {ShipType} */
 		this.type = type
 		// variables
@@ -202,32 +291,50 @@ class Ship {
 		/** @type {number} */
 		this.size = 20
 		/** @type {number} */
-		this.stress = 20
+		this.stress = 0
+		// planning
+		/** @type {Maneuver | null} */
+		this.maneuver = null
+		/** @type {Element[]} */
+		this.previewElements = []
 		// register
 		ships.push(this)
 		// element
 		this.elm = document.createElement("div")
 		map.appendChild(this.elm)
+		this.elm.addEventListener("updatestyle", () => ship.updateStyle())
 		this.updateStyle()
 		/** @type {Menu | null} */
 		this.menu = null
 		// Click listener
-		var ship = this
 		// note: the third parameter should be called "early phase"
 		this.elm.addEventListener("mousedown", (e) => {
-			if (menu != null) {
-				menu.closeMenu()
-				menu = null
+			if (activeMenu != null) {
+				activeMenu.closeMenu()
+				activeMenu = null
 			}
 			ship.click()
 			e.stopPropagation()
 		}, true)
 	}
 	updateStyle() {
-		this.elm.setAttribute("style", `background: orange; --x: ${(this.x * 2) + viewportPos.x}px; --y: ${(this.y * 2) + viewportPos.y}px; --rot: ${this.rot}deg; --size: ${this.size}px;`)
+		this.elm.setAttribute("style", `background: linear-gradient(90deg, orange 80%, black); --x: ${(this.x * 2) + viewportPos.x}px; --y: ${(this.y * 2) + viewportPos.y}px; --rot: ${this.rot}deg; --size: ${this.size}px;`)
+		if (this.emphasized()) {
+			this.elm.classList.add("em")
+		} else {
+			this.elm.classList.remove("em")
+		}
+	}
+	emphasized() {
+		if (gamePhase == "planning") return this.maneuver == null
+		return false
 	}
 	click() {
-		this.menu = new BlankMenu(this)
+		if (gamePhase == "planning" && this.maneuver == null) {
+			this.menu = new ManeuverMenu(this)
+		} else {
+			this.menu = new BlankMenu(this)
+		}
 	}
 	isStressed() {
 		return this.stress >= 1
@@ -240,7 +347,7 @@ class Menu {
 	constructor(ship) {
 		/** @type {Ship} */
 		this.ship = ship
-		menu = this
+		activeMenu = this
 		// Element
 		this.elm = document.createElement("div")
 		this.elm.classList.add("menu")
@@ -263,44 +370,72 @@ class BlankMenu extends Menu {
 		this.main.innerText = "No actions are available for this ship."
 	}
 }
-
-/** @type {"planning" | "moving" | "combat"} */
-var gamePhase = "planning"
-/** @type {Player[]} */
-var players = []
-
-/** @type {Ship[]} */
-var ships = []
-/** @type {Menu | null} */
-var menu = null
-
-/** @type {{ x: number, y: number }} */
-var viewportPos = { x: 0, y: 0 }
-/** @type {{ x: number, y: number } | null} */
-var dragLoc = null
-map.addEventListener("mousedown", (e) => {
-	if (menu != null) {
-		menu.closeMenu()
-		menu = null
-	}
-	dragLoc = { x: e.clientX, y: e.clientY }
-})
-map.addEventListener("mousemove", (e) => {
-	if (dragLoc != null) {
-		var move = { x: e.clientX - dragLoc.x, y: e.clientY - dragLoc.y }
-		dragLoc = { x: e.clientX, y: e.clientY }
-		// move the viewport
-		viewportPos.x += move.x
-		viewportPos.y += move.y
-		map.setAttribute("style", `background-position: ${viewportPos.x}px ${viewportPos.y}px;`)
-		for (var i = 0; i < ships.length; i++) {
-			ships[i].updateStyle()
+class ManeuverMenu extends Menu {
+	/**
+	 * @param {Ship} ship
+	 */
+	constructor(ship) {
+		super(ship)
+		/** @type {(HTMLDivElement | SVGSVGElement)[]} */
+		this.previewElements = []
+		this.main.setAttribute("style", `width: max-content;`) // transform: scale(2); transform-origin: center top;
+		var maxSpeed = Math.max(...ship.type.maneuvers.map((v) => v.speed))
+		this.main.innerHTML = `<table style="font-size: 1.5em;"></table>`
+		var table = this.main.children[0]
+		for (var speed = maxSpeed; speed >= 1; speed--) {
+			var row = document.createElement("tr")
+			table.appendChild(row)
+			row.appendChild(document.createElement("th")).innerText = `${speed}`
+			for (var angle = 0; angle < 5; angle++) {
+				// Make the element
+				var e = document.createElement("td")
+				row.appendChild(e)
+				// Find the maneuver here, if it exists
+				var maneuver = ship.type.maneuvers.find((v) => (v.speed == speed && v.angle == (angle - 2) * 45))
+				if (maneuver == undefined) continue;
+				// Make the arrow
+				var arrowPos = movePoint(5, 4, maneuver.angle - 90, 2)
+				var color = ["blue", "black", "red"][maneuver.stress + 1]
+				e.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path d="M 5 9 Q 5 4 ${arrowPos.x} ${arrowPos.y}" stroke="${color}" stroke-width="2" fill="none" /><path d="M 2.5 2 L 5 0 L 7.5 2 Z" style="transform: rotate(${maneuver.angle}deg); transform-origin: 5px 4px;" fill="${color}" /></svg>`;
+				// Clicky
+				((_menu, maneuver) => {
+					e.addEventListener("mouseup", () => {
+						// Register the maneuver
+						_menu.ship.maneuver = maneuver
+						// Make the preview
+						_menu.ship.previewElements = maneuver.createPreview(ship, "#0FF5")
+						// Update the ship
+						_menu.ship.updateStyle()
+						// Finish
+						_menu.closeMenu()
+					}, true)
+				})(this, maneuver);
+				// make preview thingy!
+				var previews = maneuver.createPreview(ship, "orange");
+				this.previewElements.push(...previews)
+				var styles = previews[0].getAttribute("style") ?? "";
+				// Mousey
+				((styles, preview) => {
+					e.addEventListener("mouseover", () => {
+						preview[0].setAttribute("style", styles.replace("orange", "red"))
+						preview[1].children[0].setAttribute("stroke", "red")
+					}, true)
+					e.addEventListener("mouseout", () => {
+						preview[0].setAttribute("style", styles)
+						preview[1].children[0].setAttribute("stroke", "orange")
+					}, true)
+				})(styles, previews);
+			}
 		}
 	}
-})
-map.addEventListener("mouseup", (e) => {
-	dragLoc = null
-})
+	closeMenu() {
+		super.closeMenu()
+		for (var i = 0; i < this.previewElements.length; i++) {
+			this.previewElements[i].remove();
+		}
+	}
+}
+
 
 /**
  * Parse the list of ships into a list of ShipType objects.
@@ -322,16 +457,6 @@ function parseShipList(data) {
 	}
 	return parsed
 }
-/**
- * @type {ShipType[]}
- */
-var ship_types = []
-
-var my_name = location.search.substring(1)
-/**
- * @type {Player | null}
- */
-var me = null
 
 function setStatusBar() {
 	[...statusBar.children].forEach((e) => e.remove())
@@ -376,6 +501,37 @@ async function eventCheckerLoop() {
 		await new Promise((resolve) => setTimeout(resolve, 1000))
 	}
 }
+ 
+// ------------------------------ MAIN ------------------------------
+
+map.addEventListener("mousedown", (e) => {
+	if (activeMenu != null) {
+		activeMenu.closeMenu()
+		activeMenu = null
+	}
+	dragLoc = { x: e.clientX, y: e.clientY }
+})
+map.addEventListener("mousemove", (e) => {
+	if (dragLoc != null) {
+		var move = { x: e.clientX - dragLoc.x, y: e.clientY - dragLoc.y }
+		dragLoc = { x: e.clientX, y: e.clientY }
+		// move the viewport
+		viewportPos.x += move.x
+		viewportPos.y += move.y
+		map.setAttribute("style", `background-position: ${viewportPos.x}px ${viewportPos.y}px;`)
+		// update everything
+		var elms = [...map.children]
+		for (var i = 0; i < elms.length; i++) {
+			elms[i].dispatchEvent(new Event("updatestyle"))
+		}
+	}
+})
+map.addEventListener("mouseup", (e) => {
+	dragLoc = null
+})
+
+
+
 get("ships.txt").then((x) => {
 	ship_types = parseShipList(x)
 	setStatusBar()

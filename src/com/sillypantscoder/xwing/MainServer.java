@@ -43,7 +43,7 @@ public class MainServer extends HttpServer.RequestHandler {
 				Player target = targets.get(0);
 				// ship
 				int index = Integer.parseInt(body.split("\n")[1]);
-				ShipType type = ShipType.getTypes()[index];
+				ShipType type = ShipType.types[index];
 				Ship s = new Ship(game, type, new Point(Random.randint(0, 1000), Random.randint(0, 1000)), Random.randint(0, 360));
 				// add the ship
 				target.addShip(s);

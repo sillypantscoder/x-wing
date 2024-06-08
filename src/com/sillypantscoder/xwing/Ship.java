@@ -34,7 +34,7 @@ public class Ship {
 	}
 	public static void main(String[] args) {
 		Game game = new Game();
-		ShipType testship = ShipType.getTypes()[0];
+		ShipType testship = ShipType.types[0];
 		// Create a ship
 		Ship ship = new Ship(game, testship, new Point(0, 0), 0);
 		game.ships.add(ship);

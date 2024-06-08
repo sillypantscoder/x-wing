@@ -10,6 +10,7 @@ import java.util.stream.Stream;
 // import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class ShipType {
+	public static ShipType[] types = getTypes();
 	// stuff about the ship
 	public String shipName;
 	public String pilotName;
