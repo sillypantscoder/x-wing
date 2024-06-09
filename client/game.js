@@ -12,8 +12,8 @@ if (_status == null || !(_status instanceof HTMLDivElement)) throw new Error("St
 /** @type {HTMLDivElement} */
 var statusBar = _status;
 
-/** @type {"planning" | "moving" | "combat"} */
-var gamePhase = "planning"
+/** @type {"starting" | "planning" | "moving" | "combat"} */
+var gamePhase = "starting"
 /** @type {Player[]} */
 var players = []
 
@@ -276,9 +276,12 @@ class Ship {
 	 * @param {number} y
 	 * @param {number} rot
 	 * @param {ShipType} type
+	 * @param {number} id
 	 */
-	constructor(x, y, rot, type) {
+	constructor(x, y, rot, type, id) {
 		var ship = this
+		/** @type {number} */
+		this.id = id
 		/** @type {ShipType} */
 		this.type = type
 		// variables
@@ -330,7 +333,7 @@ class Ship {
 		return false
 	}
 	click() {
-		if (gamePhase == "planning" && this.maneuver == null) {
+		if (gamePhase == "planning") {
 			this.menu = new ManeuverMenu(this)
 		} else {
 			this.menu = new BlankMenu(this)
@@ -400,6 +403,8 @@ class ManeuverMenu extends Menu {
 				// Clicky
 				((_menu, maneuver) => {
 					e.addEventListener("mouseup", () => {
+						// Remove old elements
+						_menu.ship.previewElements.forEach((e) => e.remove())
 						// Register the maneuver
 						_menu.ship.maneuver = maneuver
 						// Make the preview
@@ -408,6 +413,7 @@ class ManeuverMenu extends Menu {
 						_menu.ship.updateStyle()
 						// Finish
 						_menu.closeMenu()
+						setStatusBar()
 					}, true)
 				})(this, maneuver);
 				// make preview thingy!
@@ -460,7 +466,7 @@ function parseShipList(data) {
 
 function setStatusBar() {
 	[...statusBar.children].forEach((e) => e.remove())
-	if (gamePhase == "planning") {
+	if (gamePhase == "starting") {
 		// add ships
 		for (var i = 0; i < ship_types.length; i++) {
 			var type = ship_types[i];
@@ -471,6 +477,32 @@ function setStatusBar() {
 				post("/add_ship", my_name + "\n" + i)
 			}) })(i);
 		}
+		// add ready button
+		var e = document.createElement("button")
+		statusBar.appendChild(e)
+		e.innerText = "Submit!"
+		// click
+		e.addEventListener("click", () => {
+			post("/ready", my_name);
+			[...statusBar.children].forEach((e) => e.remove())
+		})
+	} else if (gamePhase == "planning") {
+		// add ready button
+		var e = document.createElement("button")
+		statusBar.appendChild(e)
+		e.innerText = "Submit!"
+		// disabled?
+		var disabled = false
+		if (me == null) disabled = true
+		else for (var i = 0; i < me.ships.length; i++) {
+			if (me.ships[i].maneuver == null) disabled = true
+		}
+		if (disabled) e.setAttribute("disabled", "true")
+		// click
+		e.addEventListener("click", () => {
+			submitManeuvers()
+			e.remove()
+		})
 	}
 }
 
@@ -478,7 +510,7 @@ function setStatusBar() {
  * @param {string} data
  */
 function handleEventResponse(data) {
-	var items = data.split("\n\n").map((x) => x.split("\n"));
+	var items = data.split("\n\n").map((x) => x.split("\n")).filter((v) => v.length != 1 || v[0] != "");
 	for (var i = 0; i < items.length; i++) {
 		if (items[i][0] == "addplayer") {
 			var newPlayer = new Player(items[i][1], [])
@@ -490,8 +522,16 @@ function handleEventResponse(data) {
 			var target = players.find((v) => v.name == items[i][1])
 			if (target == null) throw new Error("Player with name '" + items[i][1] + "' not found!")
 			var type = ship_types[Number(items[i][2])]
-			var newShip = new Ship(Number(items[i][3]), Number(items[i][4]), Number(items[i][5]), type)
+			var newShip = new Ship(Number(items[i][3]), Number(items[i][4]), Number(items[i][5]), type, Number(items[i][6]))
 			target.ships.push(newShip)
+		} else if (items[i][0] == "Why did the chicken cross the road? To get to the other side!") {
+			gamePhase = "planning"
+			setStatusBar()
+			for (var i = 0; i < ships.length; i++) {
+				ships[i].updateStyle()
+			}
+		} else {
+			console.error("Unknown event was recieved!!!", items[i])
 		}
 	}
 }
@@ -500,6 +540,14 @@ async function eventCheckerLoop() {
 		get("/events/" + my_name).then(handleEventResponse)
 		await new Promise((resolve) => setTimeout(resolve, 1000))
 	}
+}
+
+function submitManeuvers() {
+	if (me == null) return
+	post("/maneuvers", [
+		my_name,
+		...me.ships.map((v) => v.maneuver ? v.id + " " + v.type.maneuvers.indexOf(v.maneuver) : "Error!")
+	].join("\n"))
 }
  
 // ------------------------------ MAIN ------------------------------

@@ -7,11 +7,13 @@ public class Player {
 	public Game game;
 	public String name;
 	public Ship[] ships;
+	public boolean ready;
 	public ArrayList<String> events;
 	public Player(Game game, String name, Ship[] ships) {
 		this.game = game;
 		this.name = name;
 		this.ships = ships;
+		this.ready = false;
 		this.events = new ArrayList<String>();
 	}
 	public void fire(String event) {
@@ -39,8 +41,16 @@ public class Player {
 			for (int s = 0; s < p.ships.length; s++) {
 				Ship ship = p.ships[s];
 				int type = Arrays.asList(ShipType.types).indexOf(ship.type);
-				this.fire("addship\n" + p.name + "\n" + type + "\n" + ship.pos.x + "\n" + ship.pos.y + "\n" + ship.rotation);
+				this.fire("addship\n" + p.name + "\n" + type + "\n" + ship.pos.x + "\n" + ship.pos.y + "\n" + ship.rotation + "\n" + ship.id);
 			}
 		}
+	}
+	public Ship getShipByID(int id) {
+		for (int i = 0; i < this.ships.length; i++) {
+			if (this.ships[i].id == id) {
+				return this.ships[i];
+			}
+		}
+		return null;
 	}
 }

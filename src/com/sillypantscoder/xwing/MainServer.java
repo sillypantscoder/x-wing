@@ -33,31 +33,59 @@ public class MainServer extends HttpServer.RequestHandler {
 			return new HttpResponse().setStatus(200).addHeader("Content-Type", "text/plain").setBody(target.getEvents());
 		}
 		System.err.println("Error for request: " + path);
-		return new HttpResponse().setStatus(404);
+		return new HttpResponse().setStatus(404).setBody("unknown path");
 	}
 	public HttpResponse post(String path, String body) {
-		if (path.equals("/add_ship")) {
-			if (game.status == GameStatus.PLANNING) {
-				String user = body.split("\n")[0];
-				List<Player> targets = game.players.stream().filter((x) -> x.name.equals(user)).toList();
-				Player target = targets.get(0);
-				// ship
-				int index = Integer.parseInt(body.split("\n")[1]);
-				ShipType type = ShipType.types[index];
-				Ship s = new Ship(game, type, new Point(Random.randint(0, 1000), Random.randint(0, 1000)), Random.randint(0, 360));
-				// add the ship
-				target.addShip(s);
-				game.ships.add(s);
-				// notify everyone
-				for (int i = 0; i < game.players.size(); i++) {
-					game.players.get(i).fire("addship\n" + user + "\n" + index + "\n" + s.pos.x + "\n" + s.pos.y + "\n" + s.rotation);
-				}
-				// finish
+		if (path.equals("/ready")) {
+			String playerName = body;
+			if (game.status == GameStatus.STARTING) {
+				game.markReady(playerName);
 				return new HttpResponse().setStatus(200);
 			}
-			return new HttpResponse().setStatus(400);
+		}
+		if (path.equals("/add_ship")) {
+			String[] bodyLines = body.split("\n");
+			if (bodyLines.length != 2) {
+				return new HttpResponse().setStatus(400).setBody("expected 2 lines");
+			}
+			String playerName = bodyLines[0];
+			Player target = game.getPlayerByName(playerName);
+			int shipIndex = Integer.parseInt(bodyLines[1]);
+			if (game.status == GameStatus.STARTING) {
+				game.addShip(target, shipIndex);
+				return new HttpResponse().setStatus(200);
+			}
+			return new HttpResponse().setStatus(400).setBody("game status is not starting (" + game.status.name() + ")");
+		}
+		if (path.equals("/maneuvers")) {
+			// Submitting the maneuvers during the planning phase
+			if (game.status == GameStatus.PLANNING) {
+				String[] bodyLines = body.split("\n");
+				String playerName = bodyLines[0];
+				Player target = game.getPlayerByName(playerName);
+				// Go through all the lines and set the maneuvers
+				for (int i = 1; i < bodyLines.length; i++) {
+					String[] mdata = bodyLines[i].split(" ");
+					int shipID = Integer.parseInt(mdata[0]);
+					int maneuverID = Integer.parseInt(mdata[1]);
+					Ship ship = target.getShipByID(shipID);
+					Maneuver maneuver = ship.type.maneuvers[maneuverID];
+					ship.maneuver = maneuver;
+					// TODO: Make it so you can reload your maneuvers when you reload the page
+				}
+				// Go to the next phase if we are all done
+				for (int i = 0; i < game.ships.size(); i++) {
+					if (game.ships.get(i).maneuver == null) {
+						return new HttpResponse().setStatus(200);
+					}
+				}
+				// We are all done! Go to the next phase
+				game.startMovingPhase();
+				return new HttpResponse().setStatus(200);
+			}
+			return new HttpResponse().setStatus(400).setBody("game status is not planning (" + game.status.name() + ")");
 		}
 		System.err.println("Error for POST request: " + path);
-		return new HttpResponse().setStatus(404);
+		return new HttpResponse().setStatus(404).setBody("unknown path");
 	}
 }

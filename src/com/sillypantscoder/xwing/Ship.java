@@ -12,13 +12,21 @@ public class Ship {
 	public int rotation;
 	// Tokens
 	public int stress;
+	public int id;
+
+	public Maneuver maneuver;
+	public Action action;
+
 	// Constructor
-	public Ship(Game game, ShipType type, Point pos, int r) {
+	public Ship(Game game, ShipType type, Point pos, int r, int id) {
 		this.game = game;
 		this.type = type;
 		this.pos = pos;
 		this.rotation = r;
 		this.stress = 0;
+		this.id = id;
+		this.maneuver = null;
+		this.action = null;
 	}
 	public Rect getRect() {
 		return new Rect(this.pos.x, this.pos.y, this.type.size, this.rotation);
@@ -36,12 +44,12 @@ public class Ship {
 		Game game = new Game();
 		ShipType testship = ShipType.types[0];
 		// Create a ship
-		Ship ship = new Ship(game, testship, new Point(0, 0), 0);
+		Ship ship = new Ship(game, testship, new Point(0, 0), 0, 1);
 		game.ships.add(ship);
 		System.out.println(ship);
 		System.out.println(ship.getRect());
 		// Create another ship
-		Ship ship2 = new Ship(game, testship, new Point(30, -50), 45);
+		Ship ship2 = new Ship(game, testship, new Point(30, -50), 45, 2);
 		game.ships.add(ship2);
 		System.out.println(ship2.getRect());
 		// List maneuvers
