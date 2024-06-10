@@ -1,7 +1,6 @@
 package com.sillypantscoder.xwing;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class Player {
 	public Game game;
@@ -19,6 +18,9 @@ public class Player {
 	public void fire(String event) {
 		events.add(event);
 	}
+	public void fire(Event event) {
+		event.fire(this); // this will turn around and call fire(String) after calling Event.fire(Player)
+	}
 	public String getEvents() {
 		String r = String.join("\n\n", this.events.toArray(new String[0]));
 		this.events.clear();
@@ -34,16 +36,7 @@ public class Player {
 	}
 	public void resetEvents() {
 		events.clear();
-		// Load all the players
-		for (int i = 0; i < this.game.players.size(); i++) {
-			Player p = this.game.players.get(i);
-			this.fire("addplayer\n" + p.name);
-			for (int s = 0; s < p.ships.length; s++) {
-				Ship ship = p.ships[s];
-				int type = Arrays.asList(ShipType.types).indexOf(ship.type);
-				this.fire("addship\n" + p.name + "\n" + type + "\n" + ship.pos.x + "\n" + ship.pos.y + "\n" + ship.rotation + "\n" + ship.id);
-			}
-		}
+		this.game.sendNewConnectionEvents(this);
 	}
 	public Ship getShipByID(int id) {
 		for (int i = 0; i < this.ships.length; i++) {

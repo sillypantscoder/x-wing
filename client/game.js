@@ -480,7 +480,7 @@ function setStatusBar() {
 		// add ready button
 		var e = document.createElement("button")
 		statusBar.appendChild(e)
-		e.innerText = "Submit!"
+		e.innerText = "Ready!"
 		// click
 		e.addEventListener("click", () => {
 			post("/ready", my_name);
@@ -524,11 +524,20 @@ function handleEventResponse(data) {
 			var type = ship_types[Number(items[i][2])]
 			var newShip = new Ship(Number(items[i][3]), Number(items[i][4]), Number(items[i][5]), type, Number(items[i][6]))
 			target.ships.push(newShip)
-		} else if (items[i][0] == "Why did the chicken cross the road? To get to the other side!") {
-			gamePhase = "planning"
+		} else if (items[i][0] == "status") {
+			/** @type {Object.<string, "starting" | "planning" | "moving" | "combat">} */
+			var m = {
+				"STARTING": "starting",
+				"PLANNING": "planning",
+				"MOVING": "moving",
+				"COMBAT": "combat"
+			}
+			/** @type {"starting" | "planning" | "moving" | "combat"} */
+			var newStatus = m[items[i][1]]
+			gamePhase = newStatus;
 			setStatusBar()
-			for (var i = 0; i < ships.length; i++) {
-				ships[i].updateStyle()
+			for (var j = 0; j < ships.length; j++) {
+				ships[j].updateStyle()
 			}
 		} else {
 			console.error("Unknown event was recieved!!!", items[i])

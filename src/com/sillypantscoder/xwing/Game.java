@@ -1,6 +1,7 @@
 package com.sillypantscoder.xwing;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,20 +31,48 @@ public class Game {
 		// 	parsed[i] = newShip;
 		// 	this.ships.add(newShip);
 		// }
-		this.players.add(new Player(this, name, new Ship[] {}));
+		Player newPlayer = new Player(this, name, new Ship[] {});
+		this.players.add(newPlayer);
 		// Notify everyone
-		this.broadcast("addplayer\n" + name);
+		(new Event.PlayerLogin(newPlayer)).broadcast(this);
 	}
-	public void broadcast(String event) {
+	private void setGameStatus(GameStatus status) {
+		this.status = status;
+		(new Event.GameStatus(status)).broadcast(this);
+	}
+	private void broadcast(Event event) {
+		event.broadcast(this); // WHY?!?! 😭
+	}
+	public void sendNewConnectionEvents(Player target) {
+		// Load all the players
 		for (int i = 0; i < this.players.size(); i++) {
-			this.players.get(i).fire(event);
+			Player p = this.players.get(i);
+			
+			target.fire("addplayer\n" + p.name);
+			for (int s = 0; s < p.ships.length; s++) {
+				Ship ship = p.ships[s];
+				int type = Arrays.asList(ShipType.types).indexOf(ship.type);
+				target.fire(new Event.AddShip(p, ship, type));
+			}
+		}
+		// Load the status, as well as any associated information
+		(new Event.GameStatus(this.status)).broadcast(this);
+		if (this.status == GameStatus.PLANNING) {
+			for (int i = 0; i < target.ships.length; i++) {
+				if (target.ships[i].maneuver != null) {
+					broadcast(new Event.SetManeuver(target.ships[i]));
+				}
+			}
+	 	} else if (this.status == GameStatus.MOVING) {
+			for (int i = 0; i < this.nextShipId; i++) {
+				// ???
+			}
 		}
 	}
 	public void startMovingPhase() {
 		// Logic to do here:
 		// - Update game status to "moving"
-		this.status = GameStatus.MOVING;
-		this.broadcast("we dun started moving stuff, yo!");
+		this.setGameStatus(GameStatus.MOVING);
 		// - Determine the order that ships will be moving in. Have a reliable way
 		//   to settle ties since that will be common. In the actual game, skill
 		//   ties between the empire and rebels are settled by alternating which
@@ -84,7 +113,7 @@ public class Game {
 		Optional<Runnable> moveShip = activeShip.maneuver.execute(activeShip);
 		moveShip.ifPresent((v) -> v.run());
 		// Find which player owns the active ship
-		this.broadcast("Move ship\n" + activeShip.id);
+		this.broadcast(new Event.MoveShip(activeShip.id));
 		// Now wait for the player to send us the action after we've sent the status.
 	}
 	public Player getPlayerForShip(Ship ship) {
@@ -106,8 +135,7 @@ public class Game {
 		return target;
 	}
 	private void beginCombatPhase() {
-		this.status = GameStatus.COMBAT;
-		this.broadcast("we dun started FIGHTIN! 💥🤯  pew pew");
+		this.setGameStatus(GameStatus.COMBAT);
 	}
 	public void markReady(String playerName) {
 		Player target = getPlayerByName(playerName);
@@ -132,25 +160,23 @@ public class Game {
 		}
 	}
 	public void startPlanningPhase() {
-		this.status = GameStatus.PLANNING;
-		// TODO: ummmmmmmmm
-		this.broadcast("Why did the chicken cross the road? To get to the other side!");
+		this.setGameStatus(GameStatus.PLANNING);
 	}
 	public void addShip(Player target, int shipIndex) {
 		// ship
 		ShipType type = ShipType.types[shipIndex];
-		Ship s = new Ship(this, type, new Point(Random.randint(0, 1000), Random.randint(0, 1000)), Random.randint(0, 360), this.nextShipId);
+		Ship ship = new Ship(this, type, new Point(Random.randint(0, 1000), Random.randint(0, 1000)), Random.randint(0, 360), this.nextShipId);
 		this.nextShipId++;
 		// add the ship
-		target.addShip(s);
-		this.ships.add(s);
+		target.addShip(ship);
+		this.ships.add(ship);
 		// notify everyone
-		this.broadcast("addship\n" + target.name + "\n" + shipIndex + "\n" + s.pos.x + "\n" + s.pos.y + "\n" + s.rotation + "\n" + s.id);
+		this.broadcast(new Event.AddShip(target, ship, shipIndex));
 	}
 	public static enum GameStatus {
 		STARTING,
 		PLANNING,
 		MOVING,
-		COMBAT
+		COMBAT,
 	}
 }

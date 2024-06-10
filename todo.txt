@@ -1,0 +1,40 @@
+🐛🌟🤷‍♂️⚠️💣
+
+🌟 Players hardcoded to Jason
+
+Currently:
+STARTING phase:
+- 🐛 cannot add new players
+- 🌟 can add ships
+  - 🐛 placed randomly
+  - 🌟 ships are actually associated with players
+- 🌟 once everyone has pressed ready, switches to planning
+  - 🐛 can't un-ready yourself
+  - 🐛 can't see who else is ready
+    - 🐛 Add a player status bar!
+PLANNING phase:
+- 🌟 Can choose and change selected maneuver for each ship
+  - Doesn't handle collisions, but maybe that's only for the actual moving
+  phase. i.e. during planning you can totally plan to fly through someone.
+  - 🐜 distances aren't correct (inconsistent arc length, Augusto claims)
+- 🌟 once everyone has set their maneuvers, switches to moving
+  - 🌟 press "Ready" button after setting maneuvers
+- 🤷‍♂️ needs to be able to reset to this phase after a refresh
+- 🤷‍♂️ need to be able to send the player's chosen maneuvers to the client!
+  - 🤷‍♂️ reload maneuvers if you reload the page
+  - ⚠️💣 also send maneuvers during moving phase
+- 🌟 have a cool event class! yay!
+- 🌟 have really long 103-character-long method names 🥇
+
+MOVING phase:
+  - 🐛 need to correctly determine the order of the ships
+    - 🐛 need to know which players are empire or rebel to do this correctly
+  - 🐛 ping-pong between clients and server to actually execute the moving phase
+
+COMBAT phase:
+  - 🐛 needs to be done
+    - 🐛 needs to be started
+
+TODO:
+- Add new players
+- Allow explicit placement & orientation of ships

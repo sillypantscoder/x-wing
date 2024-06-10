@@ -1,5 +1,6 @@
 package com.sillypantscoder.xwing;
 
+import java.util.Arrays;
 import java.util.Optional;
 
 public class Ship {
@@ -39,6 +40,12 @@ public class Ship {
 	}
 	public String toString() {
 		return "Ship\n\t| type: " + type.toString().replace("\n", "\n\t| ") + "\n\t| pos: " + pos.toString() + "\n\t| rotation: " + rotation + "\n\t| stress: " + stress;
+	}
+	public int pleaseGiveMeTheManeuverIndexSoIDontMakeMyEyesBleedWithTheAbsoluteAbominationOfDoingItElsewhere() {
+		return Arrays.asList(this.type.maneuvers).indexOf(this.maneuver); // 😭
+	}
+	public String pleaseGiveMeTheManeuverIndexAsAStringSoIDontMakeMyEyesBleedWithTheAbsoluteAbominationOfDoingItElsewhere() {
+		return ("terriblestringconversion" + this.pleaseGiveMeTheManeuverIndexSoIDontMakeMyEyesBleedWithTheAbsoluteAbominationOfDoingItElsewhere()).substring(24);
 	}
 	public static void main(String[] args) {
 		Game game = new Game();
