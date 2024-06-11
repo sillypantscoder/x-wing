@@ -28,7 +28,7 @@ public class Maneuver {
 			Ship other = ship.game.ships.get(i);
 			if (other == ship) continue;
 			if (other.collidesWith(newRect)) {
-				System.out.println("[Collision: ship collides with ship #" + i + "]");
+				// System.out.println("[Collision: ship collides with ship #" + i + "]");
 				return Optional.empty(); // bonk!
 			}
 		}

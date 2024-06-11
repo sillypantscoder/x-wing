@@ -207,6 +207,7 @@ class Maneuver {
 	createPreview(ship, color) {
 		var data = this.compute(ship)
 		var _speed = this.speed
+		var originalPos = { x: ship.x, y: ship.y, r: ship.rot }
 		// Preview square
 		var preview_square = document.createElement("div")
 		preview_square.classList.add("preview")
@@ -224,8 +225,8 @@ class Maneuver {
 		preview_line.classList.add("preview")
 		function updateLineStyle() {
 			var shiptarget = movePoint(data.x, data.y, data.angle + 180, ship.size * 0.5 * 0.8)
-			var mid_pos = movePoint(ship.x, ship.y, ship.rot, _speed * 30)
-			preview_line.innerHTML = `<path d="M ${formatPos(ship)} Q ${formatPos(mid_pos)} ${formatPos(shiptarget)}" fill="none" stroke-width="3" stroke="${color}" style="transform: translate(6px, 6px); opacity: 0.5;" />`;
+			var mid_pos = movePoint(originalPos.x, originalPos.y, originalPos.r, _speed * 30)
+			preview_line.innerHTML = `<path d="M ${formatPos(originalPos)} Q ${formatPos(mid_pos)} ${formatPos(shiptarget)}" fill="none" stroke-width="3" stroke="${color}" style="transform: translate(6px, 6px); opacity: 0.5;" />`;
 		}
 		updateLineStyle()
 		preview_line.addEventListener("updatestyle", updateLineStyle)
@@ -321,6 +322,9 @@ class Ship {
 		}, true)
 	}
 	updateStyle() {
+		if (this.previewElements.length == 0 && this.maneuver != null) {
+			this.previewElements = this.maneuver.createPreview(this, "#0FF5")
+		}
 		this.elm.setAttribute("style", `background: linear-gradient(90deg, orange 80%, black); --x: ${(this.x * 2) + viewportPos.x}px; --y: ${(this.y * 2) + viewportPos.y}px; --rot: ${this.rot}deg; --size: ${this.size}px;`)
 		if (this.emphasized()) {
 			this.elm.classList.add("em")
@@ -539,6 +543,29 @@ function handleEventResponse(data) {
 			for (var j = 0; j < ships.length; j++) {
 				ships[j].updateStyle()
 			}
+		} else if (items[i][0] == "setmaneuver") {
+			var shipID = Number(items[i][1])
+			var maneuverID = Number(items[i][2])
+			var ship = getShipFromID(shipID)
+			var maneuver = ship.type.maneuvers[maneuverID]
+			ship.maneuver = maneuver
+			// update
+			ship.updateStyle()
+			setStatusBar()
+		} else if (items[i][0] == "moveship") {
+			var shipID = Number(items[i][1])
+			var ship = getShipFromID(shipID)
+			if (ship.maneuver != null) {
+				// Execute the maneuver
+				ship.maneuver.compute(ship).exec()
+				ship.maneuver = null
+				// Update
+				ship.updateStyle()
+				setStatusBar()
+			} else {
+				console.error("Error:", ship)
+				throw new Error("Cannot move ship with ID " + shipID + " because its maneuver is not set")
+			}
 		} else {
 			console.error("Unknown event was recieved!!!", items[i])
 		}
@@ -546,9 +573,21 @@ function handleEventResponse(data) {
 }
 async function eventCheckerLoop() {
 	while (true) {
-		get("/events/" + my_name).then(handleEventResponse)
+		await get("/events/" + my_name).then(handleEventResponse).catch((e) => { alert("Disconnected from the server!"); throw new Error(e) })
 		await new Promise((resolve) => setTimeout(resolve, 1000))
 	}
+}
+
+/**
+ * @param {number} shipID
+ */
+function getShipFromID(shipID) {
+	for (var i = 0; i < ships.length; i++) {
+		if (ships[i].id == shipID) {
+			return ships[i]
+		}
+	}
+	throw new Error("Ship with id " + shipID + " not found!")
 }
 
 function submitManeuvers() {
