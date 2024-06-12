@@ -11,6 +11,24 @@ public abstract class Event {
 			this.fire(game.players.get(i));
 		}
 	}
+	public static class PlaceShip extends Event {
+		private int shipID;
+		private Point pos;
+		private int rot;
+		public PlaceShip(int shipID, Point pos, int rot) {
+			this.shipID = shipID; this.pos = pos; this.rot = rot;
+		}
+		public String[] getSendString() {
+			return new String[] {
+				"placeship",
+				// 😭
+				("terriblestringconversion" + this.shipID).substring(24),
+				("terriblestringconversion" + this.pos.x).substring(24),
+				("horriblestringconversion" + this.pos.y).substring(24),
+				("terriblestringconversion" + this.rot).substring(24),
+			};
+		}
+	}
 	// private void broadcast(Game game) {
 	// 	game.broadcast(this);
 	// }

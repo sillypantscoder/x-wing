@@ -19,6 +19,9 @@ public class MainServer extends HttpServer.RequestHandler {
 		if (path.startsWith("/game.html?")) {
 			String user = path.substring(11);
 			List<Player> targets = game.players.stream().filter((x) -> x.name.equals(user)).toList();
+			if (targets.size() == 0) {
+				return new HttpResponse().setStatus(404).setBody("You are not logged in");
+			}
 			Player target = targets.get(0);
 			target.resetEvents();
 			return new HttpResponse().setStatus(200).addHeader("Content-Type", "text/html").setBody(Utils.readFile("client/game.html"));
@@ -55,6 +58,22 @@ public class MainServer extends HttpServer.RequestHandler {
 				game.markReady(playerName);
 				return new HttpResponse().setStatus(200);
 			}
+		}
+		if (path.equals("/place_ship")) {
+			String[] bodyLines = body.split("\n");
+			if (bodyLines.length != 4) {
+				return new HttpResponse().setStatus(400).setBody("expected 4 lines");
+			}
+			int shipID = Integer.parseInt(bodyLines[0]);
+			int newX = Integer.parseInt(bodyLines[1]);
+			int newY = Integer.parseInt(bodyLines[2]);
+			int newRot = Integer.parseInt(bodyLines[3]);
+			try {
+				game.placeShip(shipID, new Point(newX, newY), newRot);
+			} catch (Error e) {
+				return new HttpResponse().setStatus(400).setBody(e.getMessage());
+			}
+			return new HttpResponse().setStatus(200);
 		}
 		if (path.equals("/add_ship")) {
 			String[] bodyLines = body.split("\n");

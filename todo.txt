@@ -38,7 +38,7 @@ COMBAT phase:
 TODO now:
 ☑ Add player bar
 ☑ Make adding new players work
-☐ Make the player bar have more details depending on what phase we are in
+☑ Make the player bar have more details depending on what phase we are in
 
 ☐ Allow explicit placement & orientation of ships
 

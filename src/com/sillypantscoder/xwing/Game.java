@@ -68,6 +68,25 @@ public class Game {
 			broadcast(new Event.MoveShip(activeShip.id));
 		}
 	}
+	private Ship getShipByID(int shipID) {
+		for (int i = 0; i < this.ships.size(); i++) {
+			if (this.ships.get(i).id == shipID) {
+				return this.ships.get(i);
+			}
+		}
+		throw new Error("ship with id: " + shipID + "not found");
+	}
+	public void placeShip(int shipID, Point newPos, int newRot) {
+		if (this.status != GameStatus.STARTING) {
+			throw new Error("Must be in starting phase to move or place ships");
+		} else if (shipID < 0 || shipID >= this.ships.size()) {
+			throw new Error("Invalid ship ID");
+		}
+		Ship ship = this.getShipByID(shipID);
+		ship.pos = newPos;
+		ship.rotation = newRot;
+		this.broadcast(new Event.PlaceShip(shipID, newPos, newRot));
+	}
 	public void startMovingPhase() {
 		// Logic to do here:
 		// - Update game status to "moving"
@@ -160,7 +179,7 @@ public class Game {
 	public void addShip(Player target, int shipIndex) {
 		// ship
 		ShipType type = ShipType.types[shipIndex];
-		Ship ship = new Ship(this, type, new Point(Random.randint(0, 1000), Random.randint(0, 1000)), Random.randint(0, 360), this.nextShipId);
+		Ship ship = new Ship(this, type, new Point(Random.randint(0, 100), Random.randint(0, 100)), Random.choice(new Integer[] { 0, 45, 90, 90+45, 180, 180+45, 180+90, 180+90+45 }), this.nextShipId);
 		this.nextShipId++;
 		// add the ship
 		target.addShip(ship);

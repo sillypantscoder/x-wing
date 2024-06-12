@@ -328,6 +328,10 @@ class Ship {
 			e.stopPropagation()
 		}, true)
 	}
+	ownedByMe() {
+		if (me == null) return false
+		return me.ships.includes(this)
+	}
 	updateStyle() {
 		if (this.previewElements.length == 0 && this.maneuver != null) {
 			this.previewElements = this.maneuver.createPreview(this, "#0FF5")
@@ -340,11 +344,13 @@ class Ship {
 		}
 	}
 	emphasized() {
-		if (gamePhase == "planning") return this.maneuver == null
+		if (gamePhase == "planning") return (this.maneuver == null) && this.ownedByMe()
 		return false
 	}
 	click() {
-		if (gamePhase == "planning") {
+		if (gamePhase == "starting" && this.ownedByMe()) {
+			this.menu = new MoveShipMenu(this)
+		} else if (gamePhase == "planning" && this.ownedByMe()) {
 			this.menu = new ManeuverMenu(this)
 		} else {
 			this.menu = new BlankMenu(this)
@@ -352,6 +358,9 @@ class Ship {
 	}
 	isStressed() {
 		return this.stress >= 1
+	}
+	sendMovement() {
+		post("/place_ship", `${this.id}\n${this.x}\n${this.y}\n${this.rot}`)
 	}
 }
 class Menu {
@@ -369,6 +378,13 @@ class Menu {
 		this.main = document.createElement("div")
 		this.elm.appendChild(this.main)
 	}
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 */
+	closeMenuWithLocation(x, y) {
+		this.closeMenu()
+	}
 	closeMenu() {
 		this.ship.menu = null
 		this.elm.remove()
@@ -382,6 +398,39 @@ class BlankMenu extends Menu {
 		super(ship)
 		this.main.setAttribute("style", `min-width: 20ch;`)
 		this.main.innerText = "No actions are available for this ship."
+	}
+}
+class MoveShipMenu extends Menu {
+	/**
+	 * @param {Ship} ship
+	 */
+	constructor(ship) {
+		super(ship)
+		var _menu = this
+		this.moving = false
+		this.main.innerHTML = `<button>Move ship</button><button>Rotate</button>`
+		this.main.children[0].addEventListener("mouseup", () => {
+			_menu.moving = true
+			_menu.main.innerHTML = `Click somewhere to place the ship`
+		})
+		this.main.children[1].addEventListener("mouseup", () => {
+			ship.rot = Math.round((ship.rot / 45) + 1) * 45
+			this.ship.sendMovement()
+			ship.updateStyle()
+		})
+	}
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 */
+	closeMenuWithLocation(x, y) {
+		if (this.moving) {
+			this.ship.x = Math.round(x / 20) * 20
+			this.ship.y = Math.round(y / 20) * 20
+			this.ship.sendMovement()
+			this.ship.updateStyle()
+		}
+		this.closeMenu()
 	}
 }
 class ManeuverMenu extends Menu {
@@ -549,6 +598,13 @@ function handleEventResponse(data) {
 			var newShip = new Ship(Number(items[i][3]), Number(items[i][4]), Number(items[i][5]), type, Number(items[i][6]))
 			target.ships.push(newShip)
 			updatePlayerBar()
+		} else if (items[i][0] == "placeship") {
+			var id = Number(items[i][1])
+			var ship = getShipFromID(id)
+			ship.x = Number(items[i][2])
+			ship.y = Number(items[i][3])
+			ship.rot = Number(items[i][4])
+			ship.updateStyle()
 		} else if (items[i][0] == "status") {
 			/** @type {Object.<string, "starting" | "planning" | "moving" | "combat">} */
 			var m = {
@@ -628,7 +684,7 @@ function submitManeuvers() {
 
 map.addEventListener("mousedown", (e) => {
 	if (activeMenu != null) {
-		activeMenu.closeMenu()
+		activeMenu.closeMenuWithLocation((e.clientX - viewportPos.x) / 2, (e.clientY - viewportPos.y) / 2)
 		activeMenu = null
 	}
 	dragLoc = { x: e.clientX, y: e.clientY }
