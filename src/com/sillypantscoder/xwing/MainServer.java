@@ -20,7 +20,7 @@ public class MainServer extends HttpServer.RequestHandler {
 			String user = path.substring(11);
 			List<Player> targets = game.players.stream().filter((x) -> x.name.equals(user)).toList();
 			if (targets.size() == 0) {
-				return new HttpResponse().setStatus(404).setBody("You are not logged in");
+				return new HttpResponse().setStatus(302).addHeader("Location", "/");
 			}
 			Player target = targets.get(0);
 			target.resetEvents();
@@ -32,6 +32,9 @@ public class MainServer extends HttpServer.RequestHandler {
 		if (path.startsWith("/events/")) {
 			String user = path.substring(8);
 			List<Player> targets = game.players.stream().filter((x) -> x.name.equals(user)).toList();
+			if (targets.size() == 0) {
+				return new HttpResponse().setStatus(404).setBody("You are not logged in");
+			}
 			Player target = targets.get(0);
 			return new HttpResponse().setStatus(200).addHeader("Content-Type", "text/plain").setBody(target.getEvents());
 		}
@@ -54,7 +57,9 @@ public class MainServer extends HttpServer.RequestHandler {
 		}
 		if (path.equals("/ready")) {
 			String playerName = body;
-			if (game.status == GameStatus.STARTING) {
+			if (game.status == GameStatus.STARTING ||
+					game.status == GameStatus.MOVING ||
+					game.status == GameStatus.COMBAT) {
 				game.markReady(playerName);
 				return new HttpResponse().setStatus(200);
 			}
@@ -95,6 +100,7 @@ public class MainServer extends HttpServer.RequestHandler {
 				String[] bodyLines = body.split("\n");
 				String playerName = bodyLines[0];
 				Player target = game.getPlayerByName(playerName);
+				target.setReady(true);
 				// Go through all the lines and set the maneuvers
 				for (int i = 1; i < bodyLines.length; i++) {
 					String[] mdata = bodyLines[i].split(" ");

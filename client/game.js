@@ -314,9 +314,15 @@ class Ship {
 		this.elm = document.createElement("div")
 		map.appendChild(this.elm)
 		this.elm.addEventListener("updatestyle", () => ship.updateStyle())
-		this.updateStyle()
+		// @ts-ignore
+		this.elm._SourceShip = this // for debugging
 		/** @type {Menu | null} */
 		this.menu = null
+		// circle element
+		this.circle = document.createElement("div")
+		map.appendChild(this.circle)
+		this.circle.classList.add("ship-circle")
+		this.updateStyle()
 		// Click listener
 		// note: the third parameter should be called "early phase"
 		this.elm.addEventListener("mousedown", (e) => {
@@ -342,6 +348,7 @@ class Ship {
 		} else {
 			this.elm.classList.remove("em")
 		}
+		this.circle.setAttribute("style", `background-color: ${this.ownedByMe() ? "green" : "red"}; --x: ${(this.x * 2) + viewportPos.x}px; --y: ${(this.y * 2) + viewportPos.y}px; --size: ${this.size * 2}px;`)
 	}
 	emphasized() {
 		if (gamePhase == "planning") return (this.maneuver == null) && this.ownedByMe()
@@ -358,6 +365,10 @@ class Ship {
 	}
 	isStressed() {
 		return this.stress >= 1
+	}
+	removePreviews() {
+		this.previewElements.forEach((v) => v.remove())
+		this.previewElements = []
 	}
 	sendMovement() {
 		post("/place_ship", `${this.id}\n${this.x}\n${this.y}\n${this.rot}`)
@@ -563,6 +574,26 @@ function setStatusBar() {
 			submitManeuvers()
 			e.remove()
 		})
+	} else if (gamePhase == "moving") {
+		// add ready button
+		var e = document.createElement("button")
+		statusBar.appendChild(e)
+		e.innerText = "Ready!"
+		// click
+		e.addEventListener("click", () => {
+			post("/ready", my_name)
+			e.remove()
+		})
+	} else if (gamePhase == "combat") {
+		// add ready button
+		var e = document.createElement("button")
+		statusBar.appendChild(e)
+		e.innerText = "Ready!"
+		// click
+		e.addEventListener("click", () => {
+			post("/ready", my_name)
+			e.remove()
+		})
 	}
 }
 function updatePlayerBar() {
@@ -570,7 +601,7 @@ function updatePlayerBar() {
 	for (var i = 0; i < players.length; i++) {
 		var e = document.createElement("div")
 		playerBar.appendChild(e)
-		e.innerHTML = `<div><b></b></div><div></div><div></div>`
+		e.innerHTML = `<div><b></b></div><div></div><div style="height: 1em;"></div>`
 		e.children[0].children[0].textContent = players[i].name
 		e.children[1].textContent = `${players[i].ships.length} ship${players[i].ships.length==1 ? '' : 's'}`
 		if (players[i] == me) e.classList.add("player-me")
@@ -597,6 +628,7 @@ function handleEventResponse(data) {
 			var type = ship_types[Number(items[i][2])]
 			var newShip = new Ship(Number(items[i][3]), Number(items[i][4]), Number(items[i][5]), type, Number(items[i][6]))
 			target.ships.push(newShip)
+			newShip.updateStyle()
 			updatePlayerBar()
 		} else if (items[i][0] == "placeship") {
 			var id = Number(items[i][1])
@@ -634,7 +666,11 @@ function handleEventResponse(data) {
 			var ship = getShipFromID(shipID)
 			if (ship.maneuver != null) {
 				// Execute the maneuver
-				ship.maneuver.compute(ship).exec()
+				var result = ship.maneuver.compute(ship)
+				if (result.isInvalid) {
+					ship.removePreviews()
+					ship.previewElements = ship.maneuver.createPreview(ship, "red")
+				} else result.exec()
 				ship.maneuver = null
 				// Update
 				ship.updateStyle()
@@ -646,8 +682,12 @@ function handleEventResponse(data) {
 		} else if (items[i][0] == "ready") {
 			var target = players.find((v) => v.name == items[i][1])
 			if (target == null) throw new Error("Player with name '" + items[i][1] + "' not found!")
-			target.ready = true
+			target.ready = items[i][2] == "true"
 			updatePlayerBar()
+		} else if (items[i][0] == "shipdonemoving") {
+			var shipID = Number(items[i][1])
+			var ship = getShipFromID(shipID)
+			ship.removePreviews()
 		} else {
 			console.error("Unknown event was recieved!!!", items[i])
 		}
@@ -655,7 +695,10 @@ function handleEventResponse(data) {
 }
 async function eventCheckerLoop() {
 	while (true) {
-		await get("/events/" + my_name).then(handleEventResponse).catch((e) => { alert("Disconnected from the server!"); throw new Error(e) })
+		await get("/events/" + my_name).then(handleEventResponse).catch((e) => {
+			// alert("Disconnected from the server!");
+			throw new Error(e)
+		})
 		await new Promise((resolve) => setTimeout(resolve, 1000))
 	}
 }

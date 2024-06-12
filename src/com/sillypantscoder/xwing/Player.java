@@ -26,6 +26,10 @@ public class Player {
 		this.events.clear();
 		return r;
 	}
+	public void setReady(boolean ready) {
+		this.ready = ready;
+		game.broadcast(new Event.PlayerReady(this, ready));
+	}
 	public void addShip(Ship s) {
 		Ship[] newships = new Ship[this.ships.length + 1];
 		for (int i = 0; i < this.ships.length; i++) {

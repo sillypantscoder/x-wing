@@ -40,11 +40,14 @@ TODO now:
 ☑ Make adding new players work
 ☑ Make the player bar have more details depending on what phase we are in
 
-☐ Allow explicit placement & orientation of ships
+☑ Allow explicit placement & orientation of ships
 
-☐ Add ready buttons in moving phase
-☐ Make small loop
-☐ Handle collision client side
+☑ Add ready buttons in moving phase
+☑ Make small loop
+☑ Handle ship collision
+
+☐ Display the game phase in the status bar
+☐ Make ship menus display tokens
 
 ☐ Add teams!
 ☐ Add actions & teams to ships.txt file
@@ -52,6 +55,8 @@ TODO now:
 ☐ Let a player choose an action
 ☐ Work on attacking phase!
 
+☐ Move ships as far as possible on collision
+
 TODO later:
-- Add new players
+- ☑ Add new players
 - Add zooming of the map

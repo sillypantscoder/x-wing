@@ -1,7 +1,6 @@
 package com.sillypantscoder.xwing;
 
 import java.util.Arrays;
-import java.util.Optional;
 
 public class Ship {
 	public Game game;
@@ -65,26 +64,26 @@ public class Ship {
 		}
 		// Test a maneuver
 		Maneuver m = ship2.type.maneuvers[10];
-		Optional<Runnable> result = m.execute(ship2);
-		result.ifPresentOrElse((r) -> {
+		Maneuver.Result result = m.compute(ship2);
+		if (!result.failed()) {
 			System.out.println(ship2);
-			r.run();
+			result.apply(ship2);
 			System.out.println(ship2);
-		}, () -> {
+		} else {
 			System.out.println(ship2);
 			System.out.println("[No change]");
-		});
+		};
 		System.out.println("\nSecond maneuver...\n");
 		// Test another maneuver
 		Maneuver m2 = ship.type.maneuvers[11];
-		Optional<Runnable> result2 = m2.execute(ship);
-		result2.ifPresentOrElse((r) -> {
+		Maneuver.Result result2 = m2.compute(ship);
+		if (!result2.failed()) {
 			System.out.println(ship);
-			r.run();
+			result2.apply(ship);
 			System.out.println(ship);
-		}, () -> {
+		} else {
 			System.out.println(ship);
 			System.out.println("[No change]");
-		});
+		};
 	}
 }

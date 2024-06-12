@@ -51,9 +51,16 @@ button:active {
 	width: calc(var(--size) * 1);
 	height: calc(var(--size) * 1);
 	transform: rotate(var(--rot));
+	z-index: 1;
 }
 .map > .em {
 	box-shadow: 0 0px 0.5em 0.1em blue;
+}
+.map > .ship-circle {
+	border-radius: 50%;
+	opacity: 0.25;
+	pointer-events: none;
+	z-index: 0;
 }
 .preview {
 	pointer-events: none;
@@ -66,6 +73,7 @@ button:active {
 	justify-content: center;
 	transform: rotate(calc(var(--rot) * -1));
 	transform-origin: center -1em;
+	z-index: 2;
 }
 .menu > div {
 	position: absolute;

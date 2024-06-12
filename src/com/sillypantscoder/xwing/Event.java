@@ -41,9 +41,10 @@ public abstract class Event {
 	}
 	public static class PlayerReady extends Event {
 		private Player target;
-		public PlayerReady(Player target) { this.target = target; }
+		private boolean ready;
+		public PlayerReady(Player target, boolean ready) { this.target = target; this.ready = ready; }
 		public String[] getSendString() {
-			return new String[] { "ready", this.target.name };
+			return new String[] { "ready", this.target.name, ready ? "true" : "false" };
 		}
 	}
 	public static class GameStatus extends Event {
@@ -86,6 +87,13 @@ public abstract class Event {
 		public MoveShip(int shipId) { this.shipId = shipId; }
 		public String[] getSendString() {
 			return new String[] { "moveship", "" + this.shipId };
+		}
+	}
+	public static class ShipDoneMoving extends Event {
+		private int shipId;
+		public ShipDoneMoving(int shipId) { this.shipId = shipId; }
+		public String[] getSendString() {
+			return new String[] { "shipdonemoving", "" + this.shipId };
 		}
 	}
 }
