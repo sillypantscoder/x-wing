@@ -21,6 +21,13 @@ public abstract class Event {
 			return new String[] { "addplayer", this.newPlayer.name };
 		}
 	}
+	public static class PlayerReady extends Event {
+		private Player target;
+		public PlayerReady(Player target) { this.target = target; }
+		public String[] getSendString() {
+			return new String[] { "ready", this.target.name };
+		}
+	}
 	public static class GameStatus extends Event {
 		private Game.GameStatus status;
 		public GameStatus(Game.GameStatus status) { this.status = status; }

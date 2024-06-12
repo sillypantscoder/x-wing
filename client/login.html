@@ -2,6 +2,31 @@
 <html>
 	<head></head>
 	<body>
-		<a href="/game.html">Game</a>
+		<div>
+			<label for="name">Name: </label>
+			<input type="text" placeholder="Enter your name here!!!" size="30" id="name">
+		</div>
+		<div>
+			<button onclick="send();">Join</button>
+		</div>
+		<script>
+async function send() {
+	const name = document.getElementById('name').value;
+	if (name == "") {
+		alert("Please enter a name");
+		return;
+	}
+	var x = new XMLHttpRequest()
+	x.open("POST", "/join")
+	x.addEventListener("loadend", () => {
+		if (x.responseText == "it worked!") {
+			location.replace("/game.html?" + name)
+		} else {
+			alert("Nice try Dad!")
+		}
+	})
+	x.send(name)
+}
+		</script>
 	</body>
 </html>

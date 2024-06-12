@@ -47,7 +47,7 @@ public class Game {
 		for (int i = 0; i < this.players.size(); i++) {
 			Player p = this.players.get(i);
 			// Add this player
-			target.fire("addplayer\n" + p.name);
+			target.fire(new Event.PlayerLogin(p));
 			// Add all the ships
 			for (int s = 0; s < p.ships.length; s++) {
 				Ship ship = p.ships[s];
@@ -59,19 +59,11 @@ public class Game {
 					target.fire(new Event.SetManeuver(ship));
 				}
 			}
+			if (p.ready) target.fire(new Event.PlayerReady(p));
 		}
 		// Load the status, as well as any associated information
 		(new Event.GameStatus(this.status)).broadcast(this);
-		if (this.status == GameStatus.PLANNING) {
-			for (int i = 0; i < target.ships.length; i++) {
-				if (target.ships[i].maneuver != null) {
-					// broadcast(new Event.SetManeuver(target.ships[i]));
-				}
-			}
-	 	} else if (this.status == GameStatus.MOVING) {
-			// for (int i = 0; i < this.nextShipId; i++) {
-			// 	// ???
-			// }
+		if (this.status == GameStatus.MOVING) {
 			Ship activeShip = getActiveShip();
 			broadcast(new Event.MoveShip(activeShip.id));
 		}
@@ -143,6 +135,7 @@ public class Game {
 		Player target = getPlayerByName(playerName);
 		// is ready :)
 		target.ready = true;
+		broadcast(new Event.PlayerReady(target));
 		// Are we all ready?
 		boolean allready = true;
 		for (int i = 0; i < this.players.size(); i++) {

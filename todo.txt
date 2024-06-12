@@ -1,4 +1,4 @@
-🐛🌟🤷‍♂️⚠️💣
+🐛🌟🤷‍♂️⚠️💣☐☑
 
 🌟 Players hardcoded to Jason
 
@@ -19,10 +19,10 @@ PLANNING phase:
   - 🐜 distances aren't correct (inconsistent arc length, Augusto claims)
 - 🌟 once everyone has set their maneuvers, switches to moving
   - 🌟 press "Ready" button after setting maneuvers
-- 🤷‍♂️ needs to be able to reset to this phase after a refresh
-- 🤷‍♂️ need to be able to send the player's chosen maneuvers to the client!
-  - 🤷‍♂️ reload maneuvers if you reload the page
-  - ⚠️💣 also send maneuvers during moving phase
+- ✅ needs to be able to reset to this phase after a refresh
+- ✅ need to be able to send the player's chosen maneuvers to the client!
+  - ✅ reload maneuvers if you reload the page
+  - ✅ also send maneuvers during moving phase
 - 🌟 have a cool event class! yay!
 - 🌟 have really long 103-character-long method names 🥇
 
@@ -35,6 +35,23 @@ COMBAT phase:
   - 🐛 needs to be done
     - 🐛 needs to be started
 
-TODO:
+TODO now:
+☑ Add player bar
+☑ Make adding new players work
+☐ Make the player bar have more details depending on what phase we are in
+
+☐ Allow explicit placement & orientation of ships
+
+☐ Add ready buttons in moving phase
+☐ Make small loop
+☐ Handle collision client side
+
+☐ Add teams!
+☐ Add actions & teams to ships.txt file
+☐ Add colors to players (and copy colors to ships)
+☐ Let a player choose an action
+☐ Work on attacking phase!
+
+TODO later:
 - Add new players
-- Allow explicit placement & orientation of ships
+- Add zooming of the map

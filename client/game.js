@@ -12,6 +12,11 @@ if (_status == null || !(_status instanceof HTMLDivElement)) throw new Error("St
 /** @type {HTMLDivElement} */
 var statusBar = _status;
 
+var _players = document.querySelector(".players")
+if (_players == null || !(_players instanceof HTMLDivElement)) throw new Error("Player bar element is missing")
+/** @type {HTMLDivElement} */
+var playerBar = _players;
+
 /** @type {"starting" | "planning" | "moving" | "combat"} */
 var gamePhase = "starting"
 /** @type {Player[]} */
@@ -98,6 +103,8 @@ class Player {
 		this.name = name
 		/** @type {Ship[]} */
 		this.ships = ships
+		/** @type {boolean} */
+		this.ready = false
 	}
 }
 class ShipType {
@@ -509,6 +516,18 @@ function setStatusBar() {
 		})
 	}
 }
+function updatePlayerBar() {
+	[...playerBar.children].forEach((e) => e.remove())
+	for (var i = 0; i < players.length; i++) {
+		var e = document.createElement("div")
+		playerBar.appendChild(e)
+		e.innerHTML = `<div><b></b></div><div></div><div></div>`
+		e.children[0].children[0].textContent = players[i].name
+		e.children[1].textContent = `${players[i].ships.length} ship${players[i].ships.length==1 ? '' : 's'}`
+		if (players[i] == me) e.classList.add("player-me")
+		if (players[i].ready) e.children[2].appendChild(document.createElement("span")).classList.add("ready")
+	}
+}
 
 /**
  * @param {string} data
@@ -522,12 +541,14 @@ function handleEventResponse(data) {
 			if (newPlayer.name == my_name && me == null) {
 				me = newPlayer
 			}
+			updatePlayerBar()
 		} else if (items[i][0] == "addship") {
 			var target = players.find((v) => v.name == items[i][1])
 			if (target == null) throw new Error("Player with name '" + items[i][1] + "' not found!")
 			var type = ship_types[Number(items[i][2])]
 			var newShip = new Ship(Number(items[i][3]), Number(items[i][4]), Number(items[i][5]), type, Number(items[i][6]))
 			target.ships.push(newShip)
+			updatePlayerBar()
 		} else if (items[i][0] == "status") {
 			/** @type {Object.<string, "starting" | "planning" | "moving" | "combat">} */
 			var m = {
@@ -566,6 +587,11 @@ function handleEventResponse(data) {
 				console.error("Error:", ship)
 				throw new Error("Cannot move ship with ID " + shipID + " because its maneuver is not set")
 			}
+		} else if (items[i][0] == "ready") {
+			var target = players.find((v) => v.name == items[i][1])
+			if (target == null) throw new Error("Player with name '" + items[i][1] + "' not found!")
+			target.ready = true
+			updatePlayerBar()
 		} else {
 			console.error("Unknown event was recieved!!!", items[i])
 		}

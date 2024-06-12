@@ -32,10 +32,23 @@ public class MainServer extends HttpServer.RequestHandler {
 			Player target = targets.get(0);
 			return new HttpResponse().setStatus(200).addHeader("Content-Type", "text/plain").setBody(target.getEvents());
 		}
-		System.err.println("Error for request: " + path);
+		System.err.println("Error for GET request: " + path);
 		return new HttpResponse().setStatus(404).setBody("unknown path");
 	}
 	public HttpResponse post(String path, String body) {
+		if (path.equals("/join")) {
+			if (game.status != GameStatus.STARTING) {
+				return new HttpResponse().setStatus(400).setBody("wrong state");
+			}
+			String playerName = body;
+			if (playerName.matches("[A-Za-z0-9 ]+")) {
+				// TODO: cannot use same name as another player
+				game.login(playerName);
+				return new HttpResponse().setStatus(200).setBody("it worked!");
+			} else {
+				return new HttpResponse().setStatus(400).setBody("invalid name");
+			}
+		}
 		if (path.equals("/ready")) {
 			String playerName = body;
 			if (game.status == GameStatus.STARTING) {
