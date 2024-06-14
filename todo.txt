@@ -46,8 +46,8 @@ TODO now:
 ☑ Make small loop
 ☑ Handle ship collision
 
-☐ Display the game phase in the status bar
-☐ Make ship menus display tokens
+☑ Display the game phase in the status bar
+☑ Make ship menus display tokens
 
 ☐ Add teams!
 ☐ Add actions & teams to ships.txt file

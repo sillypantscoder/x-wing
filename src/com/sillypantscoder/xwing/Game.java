@@ -9,7 +9,7 @@ public class Game {
 	public ArrayList<Ship> ships;
 	public GameStatus status;
 	private ArrayList<Ship> shipOrder;
-	private int activeShipIndex; // in shipOrder 
+	private int activeShipIndex; // in shipOrder
 
 	private int nextShipId;
 
@@ -38,7 +38,7 @@ public class Game {
 	public void addShip(Player target, int shipIndex) {
 		// ship
 		ShipType type = ShipType.types[shipIndex];
-		Ship ship = new Ship(this, type, new Point(Random.randint(0, 10) * 20, Random.randint(0, 10) * 20), Random.choice(new Integer[] { 0, 45, 90, 90+45, 180, 180+45, 180+90, 180+90+45 }), this.nextShipId);
+		Ship ship = new Ship(this, type, new Point(Random.randint(2, 10) * 20, Random.randint(2, 10) * 20), Random.choice(new Integer[] { 0, 45, 90, 90+45, 180, 180+45, 180+90, 180+90+45 }), this.nextShipId);
 		this.nextShipId++;
 		// add the ship
 		target.addShip(ship);
@@ -167,7 +167,6 @@ public class Game {
 	}
 	private void beginCombatPhase() {
 		this.setGameStatus(GameStatus.COMBAT);
-		System.out.println("Fight!");
 	}
 	public void markReady(String playerName) {
 		Player target = getPlayerByName(playerName);

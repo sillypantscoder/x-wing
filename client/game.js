@@ -382,12 +382,33 @@ class Menu {
 		/** @type {Ship} */
 		this.ship = ship
 		activeMenu = this
-		// Element
+		// Elements
+		/*
+			elm				Has a size of 0x0 and is used for positioning.
+			 |- mainDialog	The actual dialog box.
+			     |- tokens	The list of tokens, if needed.
+				 |- main	The actual content of the menu.
+		 */
+		// elm
 		this.elm = document.createElement("div")
 		this.elm.classList.add("menu")
 		this.ship.elm.appendChild(this.elm)
+		// mainDialog
+		this.mainDialog = document.createElement("div")
+		this.elm.appendChild(this.mainDialog)
+		// tokens
+		this.tokens = document.createElement("div")
+		this.mainDialog.appendChild(this.tokens)
+		this.tokens.classList.add("tokens")
+		this.populateTokens()
+		// main
 		this.main = document.createElement("div")
-		this.elm.appendChild(this.main)
+		this.mainDialog.appendChild(this.main)
+	}
+	populateTokens() {
+		for (var i = 0; i < this.ship.stress; i++) {
+			this.tokens.innerHTML += `<span class="token-hover-stress"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><rect x="0" y="0" width="20" height="20" rx="4" fill="red" /><path d="M 8 2 L 12 2 L 12 13 L 8 13 Z M 8 15 L 12 15 L 12 18 L 8 18 Z" fill="white" /></svg></span>`
+		}
 	}
 	/**
 	 * @param {number} x
@@ -537,20 +558,29 @@ function parseShipList(data) {
 
 function setStatusBar() {
 	[...statusBar.children].forEach((e) => e.remove())
+	var indicator = document.createElement("div")
+	statusBar.appendChild(indicator)
+	indicator.classList.add("statusindicator")
+	indicator.innerText = gamePhase[0].toUpperCase() + gamePhase.substring(1) + " Phase"
 	if (gamePhase == "starting") {
 		// add ships
+		var mainShips = document.createElement("div")
+		statusBar.appendChild(mainShips)
+		mainShips.appendChild(document.createElement("h1")).innerText = "Add ships:"
 		for (var i = 0; i < ship_types.length; i++) {
 			var type = ship_types[i];
 			var e = document.createElement("button")
-			statusBar.appendChild(e)
+			mainShips.appendChild(e)
 			e.innerText = type.shipName + " (" + type.pilotName + ")";
 			((i) => { e.addEventListener("click", () => {
 				post("/add_ship", my_name + "\n" + i)
 			}) })(i);
 		}
 		// add ready button
+		var mainReady = document.createElement("div")
+		statusBar.appendChild(mainReady)
 		var e = document.createElement("button")
-		statusBar.appendChild(e)
+		mainReady.appendChild(e)
 		e.innerText = "Ready!"
 		// click
 		e.addEventListener("click", () => {
@@ -559,8 +589,10 @@ function setStatusBar() {
 		})
 	} else if (gamePhase == "planning") {
 		// add ready button
+		var mainReady = document.createElement("div")
+		statusBar.appendChild(mainReady)
 		var e = document.createElement("button")
-		statusBar.appendChild(e)
+		mainReady.appendChild(e)
 		e.innerText = "Submit!"
 		// disabled?
 		var disabled = false
@@ -576,8 +608,10 @@ function setStatusBar() {
 		})
 	} else if (gamePhase == "moving") {
 		// add ready button
+		var mainReady = document.createElement("div")
+		statusBar.appendChild(mainReady)
 		var e = document.createElement("button")
-		statusBar.appendChild(e)
+		mainReady.appendChild(e)
 		e.innerText = "Ready!"
 		// click
 		e.addEventListener("click", () => {
@@ -586,8 +620,12 @@ function setStatusBar() {
 		})
 	} else if (gamePhase == "combat") {
 		// add ready button
+		var mainReady = document.createElement("div")
+		statusBar.appendChild(mainReady)
+		mainReady.appendChild(document.createElement("h1")).innerText = "This part has not been coded yet"
+		mainReady.appendChild(document.createElement("h1")).innerText = "Sorry :("
 		var e = document.createElement("button")
-		statusBar.appendChild(e)
+		mainReady.appendChild(e)
 		e.innerText = "Ready!"
 		// click
 		e.addEventListener("click", () => {
@@ -665,12 +703,16 @@ function handleEventResponse(data) {
 			var shipID = Number(items[i][1])
 			var ship = getShipFromID(shipID)
 			if (ship.maneuver != null) {
+				// Reset the previews
+				ship.removePreviews()
 				// Execute the maneuver
 				var result = ship.maneuver.compute(ship)
 				if (result.isInvalid) {
-					ship.removePreviews()
 					ship.previewElements = ship.maneuver.createPreview(ship, "red")
-				} else result.exec()
+				} else {
+					ship.previewElements = ship.maneuver.createPreview(ship, "lime")
+					result.exec()
+				}
 				ship.maneuver = null
 				// Update
 				ship.updateStyle()
@@ -722,7 +764,7 @@ function submitManeuvers() {
 		...me.ships.map((v) => v.maneuver ? v.id + " " + v.type.maneuvers.indexOf(v.maneuver) : "Error!")
 	].join("\n"))
 }
- 
+
 // ------------------------------ MAIN ------------------------------
 
 map.addEventListener("mousedown", (e) => {
