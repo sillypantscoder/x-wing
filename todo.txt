@@ -38,8 +38,8 @@ COMBAT phase:
 TODO very now:                              Client Server
 Players have teams                            ☑      ☑
 Filter list of ships depending on your team   ☑
-Each player gets a color                      ☐      ☐
-Ships are color coded                         ☐
+Each player gets a color                      ☑      ☑
+Ships are color coded                         ☑
 
 TODO now:
 ☑ Make small loop
@@ -47,11 +47,13 @@ TODO now:
 ☑ Display the game phase in the status bar
 ☑ Make ship menus display tokens
 
-☑ Add actions & teams to ships.txt file
+☑ Add teams to ships.txt file
 ☑ Add teams!
 ☑ Let players choose their teams at the beginning
-☐ Filter list of ships depending on your team
+☑ Filter list of ships depending on your team
+☑ Color code players
 
+☐ Add actions to ships.txt file
 ☐ Allow players to choose actions (maybe in the status bar?)
 ☐ Get actions working
 

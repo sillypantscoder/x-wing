@@ -36,7 +36,7 @@ public abstract class Event {
 		private Player newPlayer;
 		public PlayerLogin(Player newPlayer) { this.newPlayer = newPlayer; }
 		public String[] getSendString() {
-			return new String[] { "addplayer", this.newPlayer.name, this.newPlayer.team.name };
+			return new String[] { "addplayer", this.newPlayer.name, this.newPlayer.team.name, this.newPlayer.color };
 		}
 	}
 	public static class PlayerReady extends Event {

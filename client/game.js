@@ -113,13 +113,16 @@ class Player {
 	/**
 	 * @param {string} name
 	 * @param {Team} team
+	 * @param {string} color
 	 * @param {Ship[]} ships
 	 */
-	constructor(name, team, ships) {
+	constructor(name, team, color, ships) {
 		/** @type {string} */
 		this.name = name
 		/** @type {Team} */
 		this.team = team
+		/** @type {string} */
+		this.color = color
 		/** @type {Ship[]} */
 		this.ships = ships
 		/** @type {boolean} */
@@ -344,7 +347,6 @@ class Ship {
 		this.circle = document.createElement("div")
 		map.appendChild(this.circle)
 		this.circle.classList.add("ship-circle")
-		this.updateStyle()
 		// Click listener
 		// note: the third parameter should be called "early phase"
 		this.elm.addEventListener("mousedown", (e) => {
@@ -370,7 +372,15 @@ class Ship {
 		} else {
 			this.elm.classList.remove("em")
 		}
-		this.circle.setAttribute("style", `background-color: ${this.ownedByMe() ? "green" : "red"}; --x: ${(this.x * 2) + viewportPos.x}px; --y: ${(this.y * 2) + viewportPos.y}px; --size: ${this.size * 2}px;`)
+		this.circle.setAttribute("style", `background-color: ${this.getOwner().color}; --x: ${(this.x * 2) + viewportPos.x}px; --y: ${(this.y * 2) + viewportPos.y}px; --size: ${this.size * 2}px;`)
+	}
+	getOwner() {
+		for (var i = 0; i < players.length; i++) {
+			if (players[i].ships.includes(this)) {
+				return players[i]
+			}
+		}
+		throw new Error("Ship with id " + this.id + " does not have an owner")
 	}
 	emphasized() {
 		if (gamePhase == "planning") return (this.maneuver == null) && this.ownedByMe()
@@ -674,6 +684,7 @@ function updatePlayerBar() {
 	for (var i = 0; i < players.length; i++) {
 		var e = document.createElement("div")
 		playerBar.appendChild(e)
+		e.setAttribute("style", `--color: ${players[i].color};`)
 		e.innerHTML = `<div><b></b></div><div></div><div></div><div style="height: 1em;"></div>`
 		e.children[0].children[0].textContent = players[i].name
 		e.children[1].textContent = `Team: ${players[i].team.name}`
@@ -690,7 +701,7 @@ function handleEventResponse(data) {
 	var items = data.split("\n\n").map((x) => x.split("\n")).filter((v) => v.length != 1 || v[0] != "");
 	for (var i = 0; i < items.length; i++) {
 		if (items[i][0] == "addplayer") {
-			var newPlayer = new Player(items[i][1], getTeamByName(items[i][2]), [])
+			var newPlayer = new Player(items[i][1], getTeamByName(items[i][2]), items[i][3], [])
 			players.push(newPlayer)
 			if (newPlayer.name == my_name && me == null) {
 				me = newPlayer

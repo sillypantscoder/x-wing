@@ -1,14 +1,17 @@
 package com.sillypantscoder.xwing;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class Team {
 	public static Team[] teams = getTeams();
 	public String name;
 	public String[] colors;
+	public ArrayList<String> remainingColors;
 	public Team(String name, String[] colors) {
 		this.name = name;
 		this.colors = colors;
+		this.remainingColors = new ArrayList<String>();
 	}
 	public static Team[] getTeams() {
 		String[] info = Utils.readFile("ships.txt").split("\n\n");
@@ -23,5 +26,13 @@ public class Team {
 			}
 		}
 		return Utils.arrayListToArray(parsed, Team.class);
+	}
+	public String getColor() {
+		if (this.remainingColors.size() == 0) {
+			this.remainingColors = new ArrayList<String>(Arrays.asList(colors));
+		}
+		String chosen = Random.choice(this.remainingColors);
+		remainingColors.remove(chosen);
+		return chosen;
 	}
 }

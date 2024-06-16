@@ -6,6 +6,7 @@ public class Player {
 	public Game game;
 	public String name;
 	public Team team;
+	public String color;
 	public Ship[] ships;
 	public boolean ready;
 	public ArrayList<String> events;
@@ -13,6 +14,7 @@ public class Player {
 		this.game = game;
 		this.name = name;
 		this.team = team;
+		this.color = team.getColor();
 		this.ships = ships;
 		this.ready = false;
 		this.events = new ArrayList<String>();
