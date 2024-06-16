@@ -36,6 +36,10 @@ var dragLoc = null
  * @type {ShipType[]}
  */
 var ship_types = []
+/**
+ * @type {Team[]}
+ */
+var teams = []
 
 var my_name = location.search.substring(1)
 /**
@@ -108,11 +112,14 @@ class Team {
 class Player {
 	/**
 	 * @param {string} name
+	 * @param {Team} team
 	 * @param {Ship[]} ships
 	 */
-	constructor(name, ships) {
+	constructor(name, team, ships) {
 		/** @type {string} */
 		this.name = name
+		/** @type {Team} */
+		this.team = team
 		/** @type {Ship[]} */
 		this.ships = ships
 		/** @type {boolean} */
@@ -568,6 +575,7 @@ function parseShipList(data) {
 			var teamname = lines[0].substring(5);
 			var colors = lines[1].substring(8).split(" ");
 			currentTeam = new Team(teamname, colors);
+			teams.push(currentTeam)
 		} else {
 			// Regular ship entry
 			var shipname = lines[0]
@@ -595,6 +603,7 @@ function setStatusBar() {
 		mainShips.appendChild(document.createElement("h1")).innerText = "Add ships:"
 		for (var i = 0; i < ship_types.length; i++) {
 			var type = ship_types[i];
+			if (me == null || type.team != me.team) continue;
 			var e = document.createElement("button")
 			mainShips.appendChild(e)
 			e.innerText = type.shipName + " (" + type.pilotName + ")";
@@ -665,11 +674,12 @@ function updatePlayerBar() {
 	for (var i = 0; i < players.length; i++) {
 		var e = document.createElement("div")
 		playerBar.appendChild(e)
-		e.innerHTML = `<div><b></b></div><div></div><div style="height: 1em;"></div>`
+		e.innerHTML = `<div><b></b></div><div></div><div></div><div style="height: 1em;"></div>`
 		e.children[0].children[0].textContent = players[i].name
-		e.children[1].textContent = `${players[i].ships.length} ship${players[i].ships.length==1 ? '' : 's'}`
+		e.children[1].textContent = `Team: ${players[i].team.name}`
+		e.children[2].textContent = `${players[i].ships.length} ship${players[i].ships.length==1 ? '' : 's'}`
 		if (players[i] == me) e.classList.add("player-me")
-		if (players[i].ready) e.children[2].appendChild(document.createElement("span")).classList.add("ready")
+		if (players[i].ready) e.children[3].appendChild(document.createElement("span")).classList.add("ready")
 	}
 }
 
@@ -680,7 +690,7 @@ function handleEventResponse(data) {
 	var items = data.split("\n\n").map((x) => x.split("\n")).filter((v) => v.length != 1 || v[0] != "");
 	for (var i = 0; i < items.length; i++) {
 		if (items[i][0] == "addplayer") {
-			var newPlayer = new Player(items[i][1], [])
+			var newPlayer = new Player(items[i][1], getTeamByName(items[i][2]), [])
 			players.push(newPlayer)
 			if (newPlayer.name == my_name && me == null) {
 				me = newPlayer
@@ -767,7 +777,7 @@ async function eventCheckerLoop() {
 			// alert("Disconnected from the server!");
 			throw new Error(e)
 		})
-		await new Promise((resolve) => setTimeout(resolve, 100))
+		await new Promise((resolve) => setTimeout(resolve, 1000))
 	}
 }
 
@@ -781,6 +791,16 @@ function getShipFromID(shipID) {
 		}
 	}
 	throw new Error("Ship with id " + shipID + " not found!")
+}
+/**
+ * @param {string} name
+ * @returns {Team}
+ */
+function getTeamByName(name) {
+	for (var i = 0; i < teams.length; i++) {
+		if (teams[i].name == name) return teams[i]
+	}
+	throw new Error("Team with name " + name + " not found!")
 }
 
 function submitManeuvers() {

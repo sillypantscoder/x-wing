@@ -36,8 +36,8 @@ COMBAT phase:
     - 🐛 needs to be started
 
 TODO very now:                              Client Server
-Players have teams                            ☐      ☑
-Filter list of ships depending on your team   ☐
+Players have teams                            ☑      ☑
+Filter list of ships depending on your team   ☑
 Each player gets a color                      ☐      ☐
 Ships are color coded                         ☐
 

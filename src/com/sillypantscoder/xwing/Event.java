@@ -36,7 +36,7 @@ public abstract class Event {
 		private Player newPlayer;
 		public PlayerLogin(Player newPlayer) { this.newPlayer = newPlayer; }
 		public String[] getSendString() {
-			return new String[] { "addplayer", this.newPlayer.name };
+			return new String[] { "addplayer", this.newPlayer.name, this.newPlayer.team.name };
 		}
 	}
 	public static class PlayerReady extends Event {
@@ -65,7 +65,7 @@ public abstract class Event {
 		private Player target;
 		private Ship ship;
 		private int typeIndex;
-		public AddShip(Player target, Ship ship, int index) { 
+		public AddShip(Player target, Ship ship, int index) {
 			this.target = target; this.ship = ship; this.typeIndex = index;
 		}
 		// this.broadcast("addship\n" + target.name + "\n" + shipIndex + "\n" + s.pos.x + "\n" + s.pos.y + "\n" + s.rotation + "\n" + s.id);

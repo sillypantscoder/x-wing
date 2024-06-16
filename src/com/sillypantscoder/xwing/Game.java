@@ -39,7 +39,7 @@ public class Game {
 		// 	this.ships.add(newShip);
 		// }
 		Team team = Game.getTeamByName(teamName);
-		Player newPlayer = new Player(this, name, new Ship[] {}, team);
+		Player newPlayer = new Player(this, name, team, new Ship[] {});
 		this.players.add(newPlayer);
 		// Notify everyone
 		(new Event.PlayerLogin(newPlayer)).broadcast(this);

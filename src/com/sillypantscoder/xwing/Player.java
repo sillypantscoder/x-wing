@@ -5,17 +5,17 @@ import java.util.ArrayList;
 public class Player {
 	public Game game;
 	public String name;
+	public Team team;
 	public Ship[] ships;
 	public boolean ready;
 	public ArrayList<String> events;
-	public Team team;
-	public Player(Game game, String name, Ship[] ships, Team team) {
+	public Player(Game game, String name, Team team, Ship[] ships) {
 		this.game = game;
 		this.name = name;
+		this.team = team;
 		this.ships = ships;
 		this.ready = false;
 		this.events = new ArrayList<String>();
-		this.team = team;
 	}
 	public void fire(String event) {
 		events.add(event);
