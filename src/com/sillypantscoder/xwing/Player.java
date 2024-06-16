@@ -8,12 +8,14 @@ public class Player {
 	public Ship[] ships;
 	public boolean ready;
 	public ArrayList<String> events;
-	public Player(Game game, String name, Ship[] ships) {
+	public Team team;
+	public Player(Game game, String name, Ship[] ships, Team team) {
 		this.game = game;
 		this.name = name;
 		this.ships = ships;
 		this.ready = false;
 		this.events = new ArrayList<String>();
+		this.team = team;
 	}
 	public void fire(String event) {
 		events.add(event);

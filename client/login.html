@@ -7,13 +7,21 @@
 			<input type="text" placeholder="Enter your name here!!!" size="30" id="name">
 		</div>
 		<div>
-			<button onclick="send();">Join</button>
+			<select name="team" id="team"></select>
+		</div>
+		<div>
+			<button onclick="send();" id="join" disabled>Join</button>
 		</div>
 		<script>
 async function send() {
 	const name = document.getElementById('name').value;
+	const team = document.getElementById('team').value;
 	if (name == "") {
 		alert("Please enter a name");
+		return;
+	}
+	if (team == "") {
+		alert("Please select a team");
 		return;
 	}
 	var x = new XMLHttpRequest()
@@ -25,8 +33,24 @@ async function send() {
 			alert("Nice try Dad!")
 		}
 	})
-	x.send(name)
+	x.send(name + "\n" + team);
 }
+fetch("/ships.txt")
+		.then(resp => resp.text())
+		.then(body => {
+			let select = document.getElementById("team");
+			body
+				.split("\n")
+				.filter(line => line.startsWith("TEAM "))
+				.map(line => line.substr(5))
+				.forEach(team => {
+					let option = document.createElement("option");
+					option.value = team;
+					option.innerText = team;
+					select.appendChild(option);
+				});
+			document.getElementById('join').removeAttribute("disabled");
+		});
 		</script>
 	</body>
 </html>

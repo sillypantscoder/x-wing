@@ -46,10 +46,11 @@ public class MainServer extends HttpServer.RequestHandler {
 			if (game.status != GameStatus.STARTING) {
 				return new HttpResponse().setStatus(400).setBody("wrong state");
 			}
-			String playerName = body;
+			String playerName = body.split("\n")[0];
+			String teamName = body.split("\n")[1];
 			if (playerName.matches("[A-Za-z0-9 ]+")) {
 				// TODO: cannot use same name as another player
-				game.login(playerName);
+				game.login(playerName, teamName);
 				return new HttpResponse().setStatus(200).setBody("it worked!");
 			} else {
 				return new HttpResponse().setStatus(400).setBody("invalid name");

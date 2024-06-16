@@ -1,3 +1,6 @@
+TEAM Empire
+Colors: #500 #550 #A00 #A05 #A50 #A55 #AA0 #F00 #F05 #F0A #F0F #F50 #F55 #F5A #F5F #FA0 #FF0 #FFA
+
 YT-1300
 Han Solo
 Skill 9, Attack 3, Defend 1, Hull 8, Shield 5
@@ -8,6 +11,27 @@ Skill 9, Attack 3, Defend 1, Hull 8, Shield 5
 Size 20
 
 A Second Ship (for testing)
+Somebody
+Skill 10000, Attack 700, Defend 0, Hull 1, Shield 800
+  =
+=---=
+-----
+ ---
+Size 20
+
+TEAM Rebels
+Colors: #005 #00A #00F #05A #05F #0AF #0FF #50F #55A #55F #5AF #AAF
+
+A Third Ship (for testing)
+Somebody
+Skill 9, Attack 3, Defend 1, Hull 8, Shield 5
+  +
++===+
+==-==
+ ---
+Size 20
+
+A Fourth Ship (for testing)
 Somebody
 Skill 10000, Attack 700, Defend 0, Hull 1, Shield 800
   =

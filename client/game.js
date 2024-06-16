@@ -93,6 +93,18 @@ function post(path, body) {
 	})
 }
 
+class Team {
+	/**
+	 * @param {string} name
+	 * @param {string[]} colors
+	 */
+	constructor(name, colors) {
+		/** @type {string} */
+		this.name = name
+		/** @type {string[]} */
+		this.colors = colors
+	}
+}
 class Player {
 	/**
 	 * @param {string} name
@@ -109,6 +121,7 @@ class Player {
 }
 class ShipType {
 	/**
+	 * @param {Team} team
 	 * @param {string} shipName
 	 * @param {string} pilotName
 	 * @param {number} skill
@@ -119,7 +132,9 @@ class ShipType {
 	 * @param {Maneuver[]} maneuvers
 	 * @param {number} size
 	 */
-	constructor(shipName, pilotName, skill, attackAmount, defendAmount, hullValue, shieldValue, maneuvers, size) {
+	constructor(team, shipName, pilotName, skill, attackAmount, defendAmount, hullValue, shieldValue, maneuvers, size) {
+		/** @type {Team} */
+		this.team = team
 		/** @type {string} */
 		this.shipName = shipName
 		/** @type {string} */
@@ -542,16 +557,27 @@ class ManeuverMenu extends Menu {
  */
 function parseShipList(data) {
 	var ships = data.split("\n\n")
+	/** @type {Team | null} */
+	var currentTeam = null
 	/** @type {ShipType[]} */
 	var parsed = []
 	for (var i = 0; i < ships.length; i++) {
 		var lines = ships[i].split("\n")
-		var shipname = lines[0]
-		var pilotname = lines[1]
-		var points = lines[2].split(", ").map((x) => x.split(" ")[1]).map((x) => Number(x))
-		var maneuvers = Maneuver.parseSet(lines.slice(3, -1).join("\n"))
-		var size = Number(lines[lines.length - 1].substring(5))
-		parsed.push(new ShipType(shipname, pilotname, points[0], points[1], points[2], points[3], points[4], maneuvers, size))
+		if (lines[0].startsWith("TEAM")) {
+			// Team entry
+			var teamname = lines[0].substring(5);
+			var colors = lines[1].substring(8).split(" ");
+			currentTeam = new Team(teamname, colors);
+		} else {
+			// Regular ship entry
+			var shipname = lines[0]
+			var pilotname = lines[1]
+			var points = lines[2].split(", ").map((x) => x.split(" ")[1]).map((x) => Number(x))
+			var maneuvers = Maneuver.parseSet(lines.slice(3, -1).join("\n"))
+			var size = Number(lines[lines.length - 1].substring(5))
+			if (currentTeam == null) throw new Error("Something is wrong with ships.txt and it's probably also causing an error on the server so go look over there")
+			parsed.push(new ShipType(currentTeam, shipname, pilotname, points[0], points[1], points[2], points[3], points[4], maneuvers, size))
+		}
 	}
 	return parsed
 }
@@ -616,7 +642,7 @@ function setStatusBar() {
 		// click
 		e.addEventListener("click", () => {
 			post("/ready", my_name)
-			e.remove()
+			e.disabled = true
 		})
 	} else if (gamePhase == "combat") {
 		// add ready button
@@ -741,7 +767,7 @@ async function eventCheckerLoop() {
 			// alert("Disconnected from the server!");
 			throw new Error(e)
 		})
-		await new Promise((resolve) => setTimeout(resolve, 1000))
+		await new Promise((resolve) => setTimeout(resolve, 100))
 	}
 }
 
@@ -799,3 +825,35 @@ get("ships.txt").then((x) => {
 	ship_types = parseShipList(x)
 	setStatusBar()
 }).then(eventCheckerLoop)
+
+// In case you want to have a bot play the game :)
+
+function autoready() {
+	function c() {
+		var btn = document.querySelector(".status > div:last-child > button")
+		if (btn && (btn instanceof HTMLElement) && !btn.hasAttribute("disabled")) {
+			btn.click()
+		}
+		if (gamePhase == "moving") setTimeout(c, 100)
+		else console.log('did it')
+	}
+	c()
+}
+function autosetmaneuvers() {
+	if (me == null) return
+	if (gamePhase != "planning") return
+	me.ships.forEach((v) => { v.maneuver = v.maneuver ?? v.type.maneuvers[Math.floor(Math.random() * v.type.maneuvers.length)]; v.updateStyle(); })
+	var e = document.querySelector(".status > div:last-child > button")
+	if (e) {
+		e.removeAttribute("disabled")
+		if (e instanceof HTMLElement) e.click()
+	}
+}
+async function autoeverything() {
+	while (true) {
+		if (gamePhase == "planning") autosetmaneuvers()
+		await new Promise((resolve) => setTimeout(resolve, 1000))
+		autoready()
+		await new Promise((resolve) => setTimeout(resolve, 1000))
+	}
+}

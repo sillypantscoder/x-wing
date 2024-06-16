@@ -35,22 +35,26 @@ COMBAT phase:
   - 🐛 needs to be done
     - 🐛 needs to be started
 
+TODO very now:                              Client Server
+Players have teams                            ☐      ☑
+Filter list of ships depending on your team   ☐
+Each player gets a color                      ☐      ☐
+Ships are color coded                         ☐
+
 TODO now:
-☑ Add player bar
-☑ Make adding new players work
-☑ Make the player bar have more details depending on what phase we are in
-
-☑ Allow explicit placement & orientation of ships
-
-☑ Add ready buttons in moving phase
 ☑ Make small loop
-☑ Handle ship collision
 
 ☑ Display the game phase in the status bar
 ☑ Make ship menus display tokens
 
-☐ Add teams!
-☐ Add actions & teams to ships.txt file
+☑ Add actions & teams to ships.txt file
+☑ Add teams!
+☑ Let players choose their teams at the beginning
+☐ Filter list of ships depending on your team
+
+☐ Allow players to choose actions (maybe in the status bar?)
+☐ Get actions working
+
 ☐ Add colors to players (and copy colors to ships)
 ☐ Let a player choose an action
 ☐ Work on attacking phase!

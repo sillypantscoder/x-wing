@@ -18,9 +18,17 @@ public class Game {
 		ships = new ArrayList<Ship>();
 		status = GameStatus.STARTING;
 		nextShipId = 1;
-		this.login("jason");
+		this.login("jason", Team.teams[0].name);
 	}
-	public void login(String name) {
+	public static Team getTeamByName(String name) {
+		for (int i = 0; i < Team.teams.length; i++) {
+			if (Team.teams[i].name.equals(name)) {
+				return Team.teams[i];
+			}
+		}
+		throw new Error("Team with name: " + name + " not found!");
+	}
+	public void login(String name, String teamName) {
 		// ShipType[] types = ShipType.getTypes();
 		// String[] indexes = ships.split("\n");
 		// Ship[] parsed = new Ship[indexes.length];
@@ -30,7 +38,8 @@ public class Game {
 		// 	parsed[i] = newShip;
 		// 	this.ships.add(newShip);
 		// }
-		Player newPlayer = new Player(this, name, new Ship[] {});
+		Team team = Game.getTeamByName(teamName);
+		Player newPlayer = new Player(this, name, new Ship[] {}, team);
 		this.players.add(newPlayer);
 		// Notify everyone
 		(new Event.PlayerLogin(newPlayer)).broadcast(this);

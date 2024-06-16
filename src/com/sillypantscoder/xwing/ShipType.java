@@ -1,5 +1,6 @@
 package com.sillypantscoder.xwing;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
@@ -11,6 +12,7 @@ import java.util.stream.Stream;
 
 public class ShipType {
 	public static ShipType[] types = getTypes();
+	public Team team;
 	// stuff about the ship
 	public String shipName;
 	public String pilotName;
@@ -23,7 +25,8 @@ public class ShipType {
 	public int size;
 	// public Action[] actions;
 	// upgrades?
-	public ShipType(String shipName, String pilotName, int skill, int attackAmount, int defendAmount, int hullValue, int shieldValue, Maneuver[] maneuvers, int size) {
+	public ShipType(Team team, String shipName, String pilotName, int skill, int attackAmount, int defendAmount, int hullValue, int shieldValue, Maneuver[] maneuvers, int size) {
+		this.team = team;
 		this.shipName = shipName;
 		this.pilotName = pilotName;
 		this.skill = skill;
@@ -46,16 +49,26 @@ public class ShipType {
 	// }
 	public static ShipType[] getTypes() {
 		String[] info = Utils.readFile("ships.txt").split("\n\n");
-		ShipType[] parsed = new ShipType[info.length];
+		ArrayList<ShipType> parsed = new ArrayList<ShipType>();
+		Team currentTeam = null;
 		for (var i = 0; i < info.length; i++) {
 			String[] lines = info[i].split("\n");
-			String shipname = lines[0];
-			String pilotname = lines[1];
-			Integer[] points = Stream.of(lines[2].split(", ")).map((x) -> Integer.parseInt(x.split(" ")[1])).toArray(Integer[]::new);
-			Maneuver[] maneuvers = Maneuver.parseSet(String.join("\n", Arrays.copyOfRange(lines, 3, lines.length - 1)));
-			int size = Integer.parseInt(lines[lines.length - 1].substring(5));
-			parsed[i] = new ShipType(shipname, pilotname, points[0], points[1], points[2], points[3], points[4], maneuvers, size);
+			if (lines[0].startsWith("TEAM")) {
+				// Switch teams
+				String name = lines[0].substring(5);
+				String[] colors = lines[1].substring(8).split(" ");
+				currentTeam = new Team(name, colors);
+			} else {
+				// Ship entry
+				String shipname = lines[0];
+				String pilotname = lines[1];
+				Integer[] points = Stream.of(lines[2].split(", ")).map((x) -> Integer.parseInt(x.split(" ")[1])).toArray(Integer[]::new);
+				Maneuver[] maneuvers = Maneuver.parseSet(String.join("\n", Arrays.copyOfRange(lines, 3, lines.length - 1)));
+				int size = Integer.parseInt(lines[lines.length - 1].substring(5));
+				if (currentTeam == null) throw new Error("Ship entry came before team definition in ships.txt file");
+				parsed.add(new ShipType(currentTeam, shipname, pilotname, points[0], points[1], points[2], points[3], points[4], maneuvers, size));
+			}
 		}
-		return parsed;
+		return Utils.arrayListToArray(parsed, ShipType.class);
 	}
 }
