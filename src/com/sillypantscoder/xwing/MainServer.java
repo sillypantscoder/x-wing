@@ -1,5 +1,6 @@
 package com.sillypantscoder.xwing;
 
+import java.util.Arrays;
 import java.util.List;
 
 import com.sillypantscoder.http.HttpResponse;
@@ -94,6 +95,16 @@ public class MainServer extends HttpServer.RequestHandler {
 				return new HttpResponse().setStatus(200);
 			}
 			return new HttpResponse().setStatus(400).setBody("game status is not starting (" + game.status.name() + ")");
+		}
+		if (path.equals("/set_action")) {
+			String[] bodyLines = body.split("\n");
+			int actionIndex = Integer.parseInt(bodyLines[0]);
+			String[] actionData = Arrays.copyOfRange(bodyLines, 1, bodyLines.length);
+			if (game.status == GameStatus.MOVING) {
+				game.assignActionForActiveShip(actionIndex, actionData);
+				return new HttpResponse().setStatus(200);
+			}
+			return new HttpResponse().setStatus(400).setBody("game status is not moving (" + game.status.name() + ")");
 		}
 		if (path.equals("/maneuvers")) {
 			// Submitting the maneuvers during the planning phase

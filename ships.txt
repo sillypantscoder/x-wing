@@ -9,6 +9,7 @@ Skill 9, Attack 3, Defend 1, Hull 8, Shield 5
 ==-==
  ---
 Size 20
+Actions: focus, barrel-roll (stress)
 
 A Second Ship (for testing)
 Somebody
@@ -18,6 +19,7 @@ Skill 10000, Attack 700, Defend 0, Hull 1, Shield 800
 -----
  ---
 Size 20
+Actions: focus, evade
 
 TEAM Rebels
 Colors: #005 #00A #00F #05A #05F #0AF #0FF #50F #55A #55F #5AF #AAF
@@ -30,6 +32,7 @@ Skill 9, Attack 3, Defend 1, Hull 8, Shield 5
 ==-==
  ---
 Size 20
+Actions: focus, barrel-roll (stress)
 
 A Fourth Ship (for testing)
 Somebody
@@ -39,3 +42,4 @@ Skill 10000, Attack 700, Defend 0, Hull 1, Shield 800
 -----
  ---
 Size 20
+Actions: focus, evade

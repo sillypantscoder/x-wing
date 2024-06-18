@@ -1,5 +1,7 @@
 package com.sillypantscoder.xwing;
 
+import java.util.Arrays;
+
 public abstract class Event {
 	public Event() {}
 	public abstract String[] getSendString();
@@ -94,6 +96,14 @@ public abstract class Event {
 		public ShipDoneMoving(int shipId) { this.shipId = shipId; }
 		public String[] getSendString() {
 			return new String[] { "shipdonemoving", "" + this.shipId };
+		}
+	}
+	public static class SetAction extends Event {
+		private Ship target;
+		public SetAction(Ship target) { this.target = target; }
+		public String[] getSendString() {
+			// so many abominations on this line so why not add some more
+			return new String[] { "setaction", "" + target.id, "" + Arrays.asList(this.target.type.actions).indexOf(this.target.action.source), String.join("\n", target.action.targetShip.action.targetShip.action.save()) };
 		}
 	}
 }

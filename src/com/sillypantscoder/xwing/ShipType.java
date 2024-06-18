@@ -4,11 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
-// import java.io.File;
-
-// import com.fasterxml.jackson.core.JsonFactory;
-// import com.fasterxml.jackson.core.json.JsonReadFeature;
-// import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sillypantscoder.xwing.Action.AvailableAction;
 
 public class ShipType {
 	public static ShipType[] types = getTypes();
@@ -23,9 +19,9 @@ public class ShipType {
 	public int shieldValue;
 	public Maneuver[] maneuvers;
 	public int size;
-	// public Action[] actions;
+	public AvailableAction[] actions;
 	// upgrades?
-	public ShipType(Team team, String shipName, String pilotName, int skill, int attackAmount, int defendAmount, int hullValue, int shieldValue, Maneuver[] maneuvers, int size) {
+	public ShipType(Team team, String shipName, String pilotName, int skill, int attackAmount, int defendAmount, int hullValue, int shieldValue, Maneuver[] maneuvers, int size, AvailableAction[] actions) {
 		this.team = team;
 		this.shipName = shipName;
 		this.pilotName = pilotName;
@@ -36,17 +32,13 @@ public class ShipType {
 		this.shieldValue = shieldValue;
 		this.maneuvers = maneuvers;
 		this.size = size;
+		this.actions = actions;
 	}
 	public String toString() {
 		return "ShipType\n\t| name: " + this.shipName + "\n\t| pilot: " + this.pilotName + "\n\t| skill: " + this.skill + "\n\t| attack: " + this.attackAmount +
 			"\n\t| defend: " + this.defendAmount + "\n\t| hull: " + this.hullValue + "\n\t| shield: " + this.shieldValue + "\n\t| maneuvers: " + this.maneuvers.length
 			+ "\n\t| size: " + this.size;
 	}
-	// public static void main(String[] args) throws Exception {
-	// 	ObjectMapper mapper = new ObjectMapper();
-	// 	ShipType value = mapper.readValue(new File(args[0]), ShipType.class);
-	// 	System.out.println(value.toString());
-	// }
 	public static ShipType[] getTypes() {
 		String[] info = Utils.readFile("ships.txt").split("\n\n");
 		ArrayList<ShipType> parsed = new ArrayList<ShipType>();
@@ -63,10 +55,18 @@ public class ShipType {
 				String shipname = lines[0];
 				String pilotname = lines[1];
 				Integer[] points = Stream.of(lines[2].split(", ")).map((x) -> Integer.parseInt(x.split(" ")[1])).toArray(Integer[]::new);
-				Maneuver[] maneuvers = Maneuver.parseSet(String.join("\n", Arrays.copyOfRange(lines, 3, lines.length - 1)));
-				int size = Integer.parseInt(lines[lines.length - 1].substring(5));
+				Maneuver[] maneuvers = Maneuver.parseSet(String.join("\n", Arrays.copyOfRange(lines, 3, lines.length - 2)));
+				int size = Integer.parseInt(lines[lines.length - 2].substring(5));
+				String[] encoded_actions = lines[lines.length - 1].substring(9).split(", ");
+				AvailableAction[] actions = new AvailableAction[encoded_actions.length];
+				for (int j = 0; j < actions.length; j++) {
+					boolean stress = encoded_actions[j].endsWith(" (stress)");
+					if (stress) encoded_actions[j] = encoded_actions[j].substring(0, encoded_actions[j].length() - 5);
+					Action.ActionCreator type = Action.getActionForString(encoded_actions[j]);
+					actions[j] = new Action.AvailableAction(type, false);
+				}
 				if (currentTeam == null) throw new Error("Ship entry came before team definition in ships.txt file");
-				parsed.add(new ShipType(currentTeam, shipname, pilotname, points[0], points[1], points[2], points[3], points[4], maneuvers, size));
+				parsed.add(new ShipType(currentTeam, shipname, pilotname, points[0], points[1], points[2], points[3], points[4], maneuvers, size, actions));
 			}
 		}
 		return Utils.arrayListToArray(parsed, ShipType.class);

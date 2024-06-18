@@ -13,9 +13,13 @@ public class Ship {
 	// Tokens
 	public int stress;
 	public int id;
-
+	// Plans
 	public Maneuver maneuver;
 	public Action action;
+
+	// status
+	public boolean focused;
+	public boolean evading;
 
 	// Constructor
 	public Ship(Game game, ShipType type, Point pos, int r, int id) {
@@ -27,6 +31,8 @@ public class Ship {
 		this.id = id;
 		this.maneuver = null;
 		this.action = null;
+		this.focused = false;
+		this.evading = false;
 	}
 	public Rect getRect() {
 		return new Rect(this.pos.x, this.pos.y, this.type.size, this.rotation);

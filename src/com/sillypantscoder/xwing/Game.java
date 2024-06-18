@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import com.sillypantscoder.xwing.Action.AvailableAction;
+
 public class Game {
 	public ArrayList<Player> players;
 	public ArrayList<Ship> ships;
@@ -89,6 +91,9 @@ public class Game {
 			Ship activeShip = getActiveShip();
 			target.fire(new Event.SetManeuver(activeShip));
 			target.fire(new Event.MoveShip(activeShip.id));
+			if (activeShip.action != null) {
+				target.fire(new Event.SetAction(activeShip));
+			}
 		}
 	}
 	private Ship getShipByID(int shipID) {
@@ -97,7 +102,7 @@ public class Game {
 				return this.ships.get(i);
 			}
 		}
-		throw new Error("ship with id: " + shipID + "not found");
+		throw new Error("ship with id: " + shipID + " not found");
 	}
 	public void placeShip(int shipID, Point newPos, int newRot) {
 		if (this.status != GameStatus.STARTING) {
@@ -162,11 +167,13 @@ public class Game {
 		this.broadcast(new Event.MoveShip(activeShip.id));
 		// Now wait for the player to send us the action after we've sent the status.
 	}
-	public void selectActionForActiveShip(Action action) {
+	public void assignActionForActiveShip(int actionIndexInShipType, String[] actionData) {
 		Ship activeShip = this.getActiveShip();
+		AvailableAction availableAction = activeShip.type.actions[actionIndexInShipType];
+		Action action = availableAction.createInstance(activeShip, actionData);
 		activeShip.action = action;
-		activeShip.action.execute(activeShip); // Execute it!
-		// After everyone has pressed Ready
+		// After everyone has pressed Ready (todo)
+		// activeShip.action.execute(); // Execute it!
 		// this.moveNextShip();
 	}
 	public Player getPlayerByName(String playerName) {
@@ -206,6 +213,13 @@ public class Game {
 			moveShip.apply(activeShip);
 		}
 		activeShip.maneuver = null;
+
+		if (activeShip.action != null) {
+			// TODO: what if the action fails?
+			activeShip.action.execute();
+			activeShip.action = null;
+		}
+
 		// Inform the clients
 		this.broadcast(new Event.ShipDoneMoving(activeShip.id));
 		// Continue
