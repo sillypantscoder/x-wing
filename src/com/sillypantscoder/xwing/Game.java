@@ -61,7 +61,7 @@ public class Game {
 		this.unreadyAllPlayers();
 		// Set status
 		this.status = status;
-		(new Event.GameStatus(status)).broadcast(this);
+		this.broadcast(new Event.GameStatus(status));
 	}
 	public void broadcast(Event event) {
 		event.broadcast(this); // WHY?!?! 😭
@@ -87,13 +87,18 @@ public class Game {
 		}
 		// Load the status, as well as any associated information
 		target.fire(new Event.GameStatus(this.status));
+		// if (this.status == GameStatus.WAITINGFORACTION) {
+		// 	Ship activeShip = getActiveShip();
+		// 	target.fire(new Event.SetManeuver(activeShip));
+		// 	target.fire(new Event.MoveShip(activeShip.id));
+		// }
 		if (this.status == GameStatus.MOVING) {
-			Ship activeShip = getActiveShip();
-			target.fire(new Event.SetManeuver(activeShip));
-			target.fire(new Event.MoveShip(activeShip.id));
-			if (activeShip.action != null) {
-				target.fire(new Event.SetAction(activeShip));
+			// Ship activeShip = getActiveShip();
+			for (int i = 0; i < ships.size(); i++) {
+				target.fire(new Event.SetManeuver(ships.get(i)));
+				target.fire(new Event.MoveShip(ships.get(i).id));
 			}
+			// target.fire(new Event.SetAction(activeShip));
 		}
 	}
 	private Ship getShipByID(int shipID) {
@@ -127,7 +132,7 @@ public class Game {
 		// - For each ship in order, execute the selected maneuver and allow the
 		//   player to pick an action.
 		this.activeShipIndex = -1;
-		this.moveNextShip();
+		this.moveAllShips();
 	}
 	public ArrayList<Ship> computeShipOrderForMovement() {
 		// TODO: make this correct (instead of the travesty augusto has here)
@@ -153,28 +158,22 @@ public class Game {
 			this.players.get(i).setReady(false);
 		}
 	}
-	private void moveNextShip() {
+	private void moveAllShips() {
 		this.unreadyAllPlayers();
-		// Activate the next ship
 		Ship activeShip = this.activateNextShip();
-		if (activeShip == null) {
-			this.beginCombatPhase(); // :O
-			return;
+		while (activeShip != null) {
+			this.broadcast(new Event.SetManeuver(activeShip));
+			this.broadcast(new Event.MoveShip(activeShip.id));
+			activeShip = this.activateNextShip();
 		}
-		// We do NOT want to move the ship now, that will be done at the end of the turn!
-		// Tell everyone we are moving this ship!
-		this.broadcast(new Event.SetManeuver(activeShip));
-		this.broadcast(new Event.MoveShip(activeShip.id));
-		// Now wait for the player to send us the action after we've sent the status.
 	}
 	public void assignActionForActiveShip(int actionIndexInShipType, String[] actionData) {
 		Ship activeShip = this.getActiveShip();
 		AvailableAction availableAction = activeShip.type.actions[actionIndexInShipType];
 		Action action = availableAction.createInstance(activeShip, actionData);
 		activeShip.action = action;
-		// After everyone has pressed Ready (todo)
-		// activeShip.action.execute(); // Execute it!
-		// this.moveNextShip();
+		// Now wait for everyone to be ready.
+		this.setGameStatus(GameStatus.MOVING);
 	}
 	public Player getPlayerByName(String playerName) {
 		List<Player> targets = this.players.stream().filter((x) -> x.name.equals(playerName)).toList();
@@ -196,34 +195,35 @@ public class Game {
 		if (allready) {
 			// start the next phase, whichever that is.
 			if (this.status == GameStatus.STARTING) this.startPlanningPhase();
-			else if (this.status == GameStatus.MOVING) this.finishMovingTurn();
+			else if (this.status == GameStatus.MOVING) this.finishMovingPhase();
 			else if (this.status == GameStatus.COMBAT) this.startPlanningPhase();
 			else {
 				System.out.println("state is incorrect: player '" + playerName + "' marked ready (and all players are ready) when server status is " + this.status.name());
 			}
 		}
 	}
-	public void finishMovingTurn() {
-		// Move the ship
-		Ship activeShip = getActiveShip();
-		Maneuver.Result moveShip = activeShip.maneuver.compute(activeShip);
-		if (moveShip.failed()) {
-			// throw new Error("ERROR! Ship with id " + activeShip.id + " cannot be moved");
-		} else {
-			moveShip.apply(activeShip);
+	public void finishMovingPhase() {
+		for (int i = 0; i < shipOrder.size(); i++) {
+			// Move the ship
+			Ship activeShip = shipOrder.get(i);
+			Maneuver.Result moveShip = activeShip.maneuver.compute(activeShip);
+			if (moveShip.failed()) {
+				// throw new Error("ERROR! Ship with id " + activeShip.id + " cannot be moved");
+			} else {
+				moveShip.apply(activeShip);
+			}
+			activeShip.maneuver = null;
+			// // Execute the action
+			// if (activeShip.action != null) {
+			// 	// T ODO: what if the action fails?
+			// 	activeShip.action.execute();
+			// 	activeShip.action = null;
+			// }
+			// Inform the clients
+			this.broadcast(new Event.ShipDoneMoving(activeShip.id));
 		}
-		activeShip.maneuver = null;
-
-		if (activeShip.action != null) {
-			// TODO: what if the action fails?
-			activeShip.action.execute();
-			activeShip.action = null;
-		}
-
-		// Inform the clients
-		this.broadcast(new Event.ShipDoneMoving(activeShip.id));
 		// Continue
-		this.moveNextShip();
+		this.beginCombatPhase();
 	}
 	public void startPlanningPhase() {
 		this.setGameStatus(GameStatus.PLANNING);
@@ -232,6 +232,6 @@ public class Game {
 		STARTING,
 		PLANNING,
 		MOVING,
-		COMBAT,
+		COMBAT
 	}
 }

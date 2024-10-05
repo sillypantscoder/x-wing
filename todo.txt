@@ -46,11 +46,16 @@ TODO now:
 
 ☑ Add actions to ships.txt file
 ☐ Allow players to choose actions (maybe in the status bar?)
-☐ Get actions working
+☐ Get actions working:
+  ☐ Focus
+  ☐ Evade
+  ☐ Barrel roll
+☐ Make sure actions can work after refreshing
 
-☐ Have different icons for different ships
 ☐ Verify that different ships can have different size icons, and that collision
   detection does all the right stuff.
+☐ Have different icons for different ships
+☐ Delete ships during starting phase
 
 ☐ Work on attacking phase!
 

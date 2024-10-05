@@ -51,6 +51,9 @@ public abstract class Action {
 		actionTypes.put("focus", FocusAction::create);
 		actionTypes.put("evade", EvadeAction::create);
 		actionTypes.put("barrel-roll", BarrelRollAction::create);
+		if (! actionTypes.containsKey(type)) {
+			System.err.println("WARNING! Action for string '" + type + "' was not found! This may result in bugs!");
+		}
 		return actionTypes.get(type);
 	}
 	public static class FocusAction extends Action {
@@ -69,6 +72,7 @@ public abstract class Action {
 		public boolean direction; // false for left, true for right
 		public BarrelRollAction(Ship targetShip, AvailableAction source, boolean direction) { super(targetShip, source); this.direction = direction; }
 		public void execute() {
+			System.out.println("barrel roll");
 			targetShip.pos.moveDirection(targetShip.rotation + (direction ? 90 : -90), 40);
 		}
 		public static BarrelRollAction create(Ship ship, AvailableAction source, String[] data) {

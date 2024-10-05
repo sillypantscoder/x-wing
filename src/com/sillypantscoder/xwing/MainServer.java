@@ -1,6 +1,5 @@
 package com.sillypantscoder.xwing;
 
-import java.util.Arrays;
 import java.util.List;
 
 import com.sillypantscoder.http.HttpResponse;
@@ -67,6 +66,7 @@ public class MainServer extends HttpServer.RequestHandler {
 			}
 		}
 		if (path.equals("/place_ship")) {
+			// TODO: correct phase only
 			String[] bodyLines = body.split("\n");
 			if (bodyLines.length != 4) {
 				return new HttpResponse().setStatus(400).setBody("expected 4 lines");
@@ -83,6 +83,7 @@ public class MainServer extends HttpServer.RequestHandler {
 			return new HttpResponse().setStatus(200);
 		}
 		if (path.equals("/add_ship")) {
+			// TODO: correct phase only
 			String[] bodyLines = body.split("\n");
 			if (bodyLines.length != 2) {
 				return new HttpResponse().setStatus(400).setBody("expected 2 lines");
@@ -96,16 +97,16 @@ public class MainServer extends HttpServer.RequestHandler {
 			}
 			return new HttpResponse().setStatus(400).setBody("game status is not starting (" + game.status.name() + ")");
 		}
-		if (path.equals("/set_action")) {
-			String[] bodyLines = body.split("\n");
-			int actionIndex = Integer.parseInt(bodyLines[0]);
-			String[] actionData = Arrays.copyOfRange(bodyLines, 1, bodyLines.length);
-			if (game.status == GameStatus.MOVING) {
-				game.assignActionForActiveShip(actionIndex, actionData);
-				return new HttpResponse().setStatus(200);
-			}
-			return new HttpResponse().setStatus(400).setBody("game status is not moving (" + game.status.name() + ")");
-		}
+		// if (path.equals("/set_action")) {
+		// 	String[] bodyLines = body.split("\n");
+		// 	int actionIndex = Integer.parseInt(bodyLines[0]);
+		// 	String[] actionData = Arrays.copyOfRange(bodyLines, 1, bodyLines.length);
+		// 	if (game.status == GameStatus.WAITINGFORACTION) {
+		// 		game.assignActionForActiveShip(actionIndex, actionData);
+		// 		return new HttpResponse().setStatus(200);
+		// 	}
+		// 	return new HttpResponse().setStatus(400).setBody("game status is not moving (" + game.status.name() + ")");
+		// }
 		if (path.equals("/maneuvers")) {
 			// Submitting the maneuvers during the planning phase
 			if (game.status == GameStatus.PLANNING) {
@@ -121,7 +122,6 @@ public class MainServer extends HttpServer.RequestHandler {
 					Ship ship = target.getShipByID(shipID);
 					Maneuver maneuver = ship.type.maneuvers[maneuverID];
 					ship.maneuver = maneuver;
-					// TODO: Make it so you can reload your maneuvers when you reload the page
 				}
 				// Go to the next phase if we are all done
 				for (int i = 0; i < game.ships.size(); i++) {

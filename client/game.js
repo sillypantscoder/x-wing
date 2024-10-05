@@ -143,7 +143,7 @@ class ShipType {
 	 * @param {number} shieldValue
 	 * @param {Maneuver[]} maneuvers
 	 * @param {number} size
-	 * @param {{ actionID: number, stress: boolean }[]} actions
+	 * @param {{ actionName: string, stress: boolean }[]} actions
 	 */
 	constructor(team, shipName, pilotName, skill, attackAmount, defendAmount, hullValue, shieldValue, maneuvers, size, actions) {
 		/** @type {Team} */
@@ -166,7 +166,7 @@ class ShipType {
 		this.maneuvers = maneuvers
 		/** @type {number} */
 		this.size = size
-		/** @type {{ actionID: number, stress: boolean }[]} */
+		/** @type {{ actionName: string, stress: boolean }[]} */
 		this.actions = actions
 	}
 }
@@ -394,6 +394,7 @@ class Ship {
 	}
 	emphasized() {
 		if (gamePhase == "planning") return (this.maneuver == null) && this.ownedByMe()
+		// if (gamePhase == "waiting_for_action") return (this == activeShip) && this.ownedByMe()
 		return false
 	}
 	click() {
@@ -575,15 +576,27 @@ class ManeuverMenu extends Menu {
 		}
 	}
 }
-/** @type {Object.<string, (ship: Ship, data: string[]) => void>} */
+/** @type {Object.<string, { title: string, select: Object.<string, string[]>, execute: (ship: Ship, data: string[]) => void}>} */
 var actions = {
-	"focus": (ship, data) => { ship.focused = true },
-	"evade": (ship, data) => { ship.evading = true },
-	"barrel-roll": (ship, data) => {
-		var deg = data[0] == "right" ? 90 : -90
-		var newPos = movePoint(ship.x, ship.y, ship.rot + deg, 40)
-		ship.x = newPos.x
-		ship.y = newPos.y
+	"focus": {
+		title: "Focus",
+		select: { "Focus": [] },
+		execute: (ship, data) => { ship.focused = true }
+	},
+	"evade": {
+		title: "Evade",
+		select: { "Evade": [] },
+		execute: (ship, data) => { ship.evading = true }
+	},
+	"barrel-roll": {
+		title: "Barrel Roll",
+		select: { "Left": ["left"], "Right": ["right"] },
+		execute: (ship, data) => {
+			var deg = data[0] == "right" ? 90 : -90
+			var newPos = movePoint(ship.x, ship.y, ship.rot + deg, 40)
+			ship.x = newPos.x
+			ship.y = newPos.y
+		}
 	}
 }
 
@@ -615,14 +628,13 @@ function parseShipList(data) {
 			var maneuvers = Maneuver.parseSet(lines.slice(3, -2).join("\n"))
 			var size = Number(lines[lines.length - 2].substring(5))
 			let encoded_actions = lines[lines.length - 1].substring(9).split(", ");
-			let actionIndices = encoded_actions.map(str => {
+			let actionIDNames = encoded_actions.map(str => {
 				let stress = str.endsWith(" (stress)");
 				if (stress) str = str.substring(0, str.length - 9);
-				let actionID = Object.keys(actions).indexOf(str);
-				return { actionID, stress };
+				return { actionName: str, stress };
 			})
 			if (currentTeam == null) throw new Error("Something is wrong with ships.txt and it's probably also causing an error on the server so go look over there")
-			parsed.push(new ShipType(currentTeam, shipname, pilotname, points[0], points[1], points[2], points[3], points[4], maneuvers, size, actionIndices));
+			parsed.push(new ShipType(currentTeam, shipname, pilotname, points[0], points[1], points[2], points[3], points[4], maneuvers, size, actionIDNames));
 		}
 	}
 	return parsed
@@ -633,7 +645,9 @@ function setStatusBar() {
 	var indicator = document.createElement("div")
 	statusBar.appendChild(indicator)
 	indicator.classList.add("statusindicator")
-	indicator.innerText = gamePhase[0].toUpperCase() + gamePhase.substring(1) + " Phase"
+	var phase = gamePhase[0].toUpperCase() + gamePhase.substring(1)
+	phase = phase.replace("Waiting_for_action", "Moving")
+	indicator.innerText = phase + " Phase"
 	if (gamePhase == "starting") {
 		// add ships
 		var mainShips = document.createElement("div")
@@ -679,32 +693,53 @@ function setStatusBar() {
 			submitManeuvers()
 			e.remove()
 		})
+	// } else if (gamePhase == "waiting_for_action") {
+	// 	if (activeShip == null) return
+	// 	if (activeShip.ownedByMe()) {
+	// 		// Add the list of actions
+	// 		var mainActions = document.createElement("div")
+	// 		statusBar.appendChild(mainActions)
+	// 		for (var i = 0; i < activeShip.type.actions.length; i++) {
+	// 			var availableAction = activeShip.type.actions[i]
+	// 			var action = actions[availableAction.actionName]
+	// 			var m = document.createElement("div")
+	// 			mainActions.appendChild(m)
+	// 			m.appendChild(document.createTextNode(action.title + ": "))
+	// 			// Buttons
+	// 			var keys = Object.keys(action.select)
+	// 			for (var b = 0; b < keys.length; b++) {
+	// 				var e = document.createElement("button")
+	// 				m.appendChild(e);
+	// 				e.innerText = keys[b];
+	// 				// click
+	// 				((e, actionIndex, result) => {
+	// 					e.addEventListener("click", () => {
+	// 						mainActions.querySelectorAll("button").forEach((v) => v.setAttribute("disabled", "true"))
+	// 						post("/set_action", [actionIndex, ...result].join("\n"))
+	// 					})
+	// 				})(e, i, action.select[keys[b]]);
+	// 			}
+	// 		}
+	// 	} else {
+	// 		var mainActions = document.createElement("div")
+	// 		statusBar.appendChild(mainActions)
+	// 		var m = document.createElement("div")
+	// 		mainActions.appendChild(m)
+	// 		// TODO: Make player name bold
+	// 		m.innerText = "Wait for " + activeShip.getOwner().name + " to select an action"
+	// 	}
 	} else if (gamePhase == "moving") {
-		if (activeShip == null) return
-		if (activeShip.ownedByMe()) {
-			// Add the list of actions
-			var mainActions = document.createElement("div")
-			statusBar.appendChild(mainActions)
-			var e = document.createElement("button")
-			mainActions.appendChild(e)
-			e.innerText = "Ready!"
-			// click
-			e.addEventListener("click", () => {
-				post("/ready", my_name)
-				e.disabled = true
-			})
-		}
-		// // add ready button
-		// var mainReady = document.createElement("div")
-		// statusBar.appendChild(mainReady)
-		// var e = document.createElement("button")
-		// mainReady.appendChild(e)
-		// e.innerText = "Ready!"
-		// // click
-		// e.addEventListener("click", () => {
-		// 	post("/ready", my_name)
-		// 	e.disabled = true
-		// })
+		// add ready button
+		var mainReady = document.createElement("div")
+		statusBar.appendChild(mainReady)
+		var e = document.createElement("button")
+		mainReady.appendChild(e)
+		e.innerText = "Ready!"
+		// click
+		e.addEventListener("click", () => {
+			post("/ready", my_name)
+			e.disabled = true
+		})
 	} else if (gamePhase == "combat") {
 		// add ready button
 		var mainReady = document.createElement("div")
@@ -769,6 +804,7 @@ function handleEventResponse(data) {
 			var m = {
 				"STARTING": "starting",
 				"PLANNING": "planning",
+				// "WAITINGFORACTION": "waiting_for_action",
 				"MOVING": "moving",
 				"COMBAT": "combat"
 			}
@@ -903,17 +939,17 @@ get("ships.txt").then((x) => {
 
 // In case you want to have a bot play the game :)
 
-function autoready() {
-	function c() {
-		var btn = document.querySelector(".status > div:last-child > button")
-		if (btn && (btn instanceof HTMLElement) && !btn.hasAttribute("disabled")) {
-			btn.click()
-		}
-		if (gamePhase == "moving") setTimeout(c, 100)
-		else console.log('did it')
-	}
-	c()
-}
+// function autoready() {
+// 	function c() {
+// 		var btn = document.querySelector(".status > div:last-child > button")
+// 		if (btn && (btn instanceof HTMLElement) && !btn.hasAttribute("disabled")) {
+// 			btn.click()
+// 		}
+// 		if (gamePhase == "moving") setTimeout(c, 100)
+// 		else console.log('did it')
+// 	}
+// 	c()
+// }
 function autosetmaneuvers() {
 	if (me == null) return
 	if (gamePhase != "planning") return
@@ -924,11 +960,11 @@ function autosetmaneuvers() {
 		if (e instanceof HTMLElement) e.click()
 	}
 }
-async function autoeverything() {
-	while (true) {
-		if (gamePhase == "planning") autosetmaneuvers()
-		await new Promise((resolve) => setTimeout(resolve, 1000))
-		autoready()
-		await new Promise((resolve) => setTimeout(resolve, 1000))
-	}
-}
+// async function autoeverything() {
+// 	while (true) {
+// 		if (gamePhase == "planning") autosetmaneuvers()
+// 		await new Promise((resolve) => setTimeout(resolve, 1000))
+// 		autoready()
+// 		await new Promise((resolve) => setTimeout(resolve, 1000))
+// 	}
+// }

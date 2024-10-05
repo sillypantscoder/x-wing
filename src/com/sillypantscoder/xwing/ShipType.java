@@ -61,7 +61,7 @@ public class ShipType {
 				AvailableAction[] actions = new AvailableAction[encoded_actions.length];
 				for (int j = 0; j < actions.length; j++) {
 					boolean stress = encoded_actions[j].endsWith(" (stress)");
-					if (stress) encoded_actions[j] = encoded_actions[j].substring(0, encoded_actions[j].length() - 5);
+					if (stress) encoded_actions[j] = encoded_actions[j].substring(0, encoded_actions[j].length() - 9);
 					Action.ActionCreator type = Action.getActionForString(encoded_actions[j]);
 					actions[j] = new Action.AvailableAction(type, false);
 				}

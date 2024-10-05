@@ -1,5 +1,5 @@
-TEAM Empire
-Colors: #500 #550 #A00 #A05 #A50 #A55 #AA0 #F00 #F05 #F0A #F0F #F50 #F55 #F5A #F5F #FA0 #FF0 #FFA
+TEAM Rebels
+Colors: #005 #00A #00F #05A #05F #0AF #0FF #50F #55A #55F #5AF #AAF
 
 YT-1300
 Han Solo
@@ -8,38 +8,50 @@ Skill 9, Attack 3, Defend 1, Hull 8, Shield 5
 +===+
 ==-==
  ---
-Size 20
+Size 40
 Actions: focus, barrel-roll (stress)
 
-A Second Ship (for testing)
-Somebody
-Skill 10000, Attack 700, Defend 0, Hull 1, Shield 800
+T-65 X-Wing
+Luke Skywalker
+Skill 5, Attack 3, Defend 2, Hull 4, Shield 2
   =
+=====
 =---=
------
  ---
 Size 20
-Actions: focus, evade
+Actions: focus, barrel-roll
 
-TEAM Rebels
-Colors: #005 #00A #00F #05A #05F #0AF #0FF #50F #55A #55F #5AF #AAF
+TEAM Empire
+Colors: #500 #550 #A00 #A05 #A50 #A55 #AA0 #F00 #F05 #F0A #F0F #F50 #F55 #F5A #F5F #FA0 #FF0 #FFA
 
-A Third Ship (for testing)
-Somebody
-Skill 9, Attack 3, Defend 1, Hull 8, Shield 5
-  +
-+===+
+Tie-Advanced
+Darth Vader
+Skill 6, Attack 2, Defend 3, Hull 3, Shield 2
+  =
 ==-==
- ---
-Size 20
-Actions: focus, barrel-roll (stress)
-
-A Fourth Ship (for testing)
-Somebody
-Skill 10000, Attack 700, Defend 0, Hull 1, Shield 800
-  =
 =---=
------
- ---
-Size 20
+ -=-
+Size 15
+Actions: focus, barrel-roll
+
+Tie Fighter
+Black Squadron Ace
+Skill 3, Attack 2, Defend 3, Hull 3, Shield 0
+  =
+  =
+==-==
+=---=
+=   =
+Size 15
 Actions: focus, evade
+
+Tie Defender
+Onyx Squadron Ace
+Skill 4, Attack 3, Defend 3, Hull 3, Shield 4
+  =
+  =
+==-==
++=-=+
++- -+
+Size 15
+Actions: focus, evade, barrel-roll
