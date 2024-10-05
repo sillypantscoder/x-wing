@@ -1,5 +1,6 @@
 package com.sillypantscoder.xwing;
 
+import java.util.Arrays;
 import java.util.List;
 
 import com.sillypantscoder.http.HttpResponse;
@@ -59,14 +60,18 @@ public class MainServer extends HttpServer.RequestHandler {
 		if (path.equals("/ready")) {
 			String playerName = body;
 			if (game.status == GameStatus.STARTING ||
-					game.status == GameStatus.MOVING ||
-					game.status == GameStatus.COMBAT) {
+				game.status == GameStatus.MOVING ||
+				game.status == GameStatus.EXECUTING_ACTIONS ||
+				game.status == GameStatus.COMBAT
+			) {
 				game.markReady(playerName);
 				return new HttpResponse().setStatus(200);
 			}
 		}
 		if (path.equals("/place_ship")) {
-			// TODO: correct phase only
+			if (game.status != GameStatus.STARTING) {
+				return new HttpResponse().setStatus(400).setBody("wrong phase");
+			}
 			String[] bodyLines = body.split("\n");
 			if (bodyLines.length != 4) {
 				return new HttpResponse().setStatus(400).setBody("expected 4 lines");
@@ -97,16 +102,22 @@ public class MainServer extends HttpServer.RequestHandler {
 			}
 			return new HttpResponse().setStatus(400).setBody("game status is not starting (" + game.status.name() + ")");
 		}
-		// if (path.equals("/set_action")) {
-		// 	String[] bodyLines = body.split("\n");
-		// 	int actionIndex = Integer.parseInt(bodyLines[0]);
-		// 	String[] actionData = Arrays.copyOfRange(bodyLines, 1, bodyLines.length);
-		// 	if (game.status == GameStatus.WAITINGFORACTION) {
-		// 		game.assignActionForActiveShip(actionIndex, actionData);
-		// 		return new HttpResponse().setStatus(200);
-		// 	}
-		// 	return new HttpResponse().setStatus(400).setBody("game status is not moving (" + game.status.name() + ")");
-		// }
+		if (path.equals("/set_actions")) {
+			if (game.status != GameStatus.SELECTING_ACTIONS) {
+				return new HttpResponse().setStatus(400).setBody("wrong state");
+			}
+			String[] payloadLines = body.split("\n");
+			Player player = game.getPlayerByName(payloadLines[0]);
+			for (int i = 1; i < payloadLines.length; i++) {
+				String[] shipAction = payloadLines[i].split(" ");
+				int shipID = Integer.parseInt(shipAction[0]);
+				int actionID = Integer.parseInt(shipAction[1]);
+				String[] actionData = Arrays.copyOfRange(shipAction, 2, shipAction.length);
+				game.assignActionForShip(player, shipID, actionID, actionData);
+			}
+			game.markReady(player);
+			return new HttpResponse().setStatus(200);
+		}
 		if (path.equals("/maneuvers")) {
 			// Submitting the maneuvers during the planning phase
 			if (game.status == GameStatus.PLANNING) {
@@ -130,7 +141,7 @@ public class MainServer extends HttpServer.RequestHandler {
 					}
 				}
 				// We are all done! Go to the next phase
-				game.startMovingPhase();
+				game.beginNextGamePhase();
 				return new HttpResponse().setStatus(200);
 			}
 			return new HttpResponse().setStatus(400).setBody("game status is not planning (" + game.status.name() + ")");

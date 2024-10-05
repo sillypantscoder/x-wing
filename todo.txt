@@ -2,6 +2,18 @@
 
 🌟 Players hardcoded to Jason
 
+Structural TODO:
+Make game phases a more self-contained data structure. In particular, it would
+be really nice to be able to define a phase in terms of:
+  -- what happens when a phase is entered
+  ---- the sequence of interactions that occur within a phase, like:
+    - per ship stuff
+    - per player stuff
+    - synchronization points
+    - UI notifications and interactions
+  -- what happens right before leaving a phase
+
+
 Currently:
 STARTING phase:
 - 🐛 cannot add new players
@@ -10,8 +22,6 @@ STARTING phase:
   - 🌟 ships are actually associated with players
 - 🌟 once everyone has pressed ready, switches to planning
   - 🐛 can't un-ready yourself
-  - 🐛 can't see who else is ready
-    - 🐛 Add a player status bar!
 PLANNING phase:
 - 🌟 Can choose and change selected maneuver for each ship
   - Doesn't handle collisions, but maybe that's only for the actual moving
@@ -45,7 +55,8 @@ TODO now:
 ☑ Color code players
 
 ☑ Add actions to ships.txt file
-☐ Allow players to choose actions (maybe in the status bar?)
+☑ Allow players to choose actions (maybe in the status bar?)
+☐ *Sync actions with client side!*
 ☐ Get actions working:
   ☐ Focus
   ☐ Evade

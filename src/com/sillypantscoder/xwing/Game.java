@@ -58,6 +58,7 @@ public class Game {
 		this.broadcast(new Event.AddShip(target, ship, shipIndex));
 	}
 	private void setGameStatus(GameStatus status) {
+		System.out.println("Set game status, from " + this.status.name() + " to " + status.name());
 		this.unreadyAllPlayers();
 		// Set status
 		this.status = status;
@@ -118,10 +119,7 @@ public class Game {
 		ship.rotation = newRot;
 		this.broadcast(new Event.PlaceShip(shipID, newPos, newRot));
 	}
-	public void startMovingPhase() {
-		// Logic to do here:
-		// - Update game status to "moving"
-		this.setGameStatus(GameStatus.MOVING);
+	public void initMovingPhase() {
 		// - Determine the order that ships will be moving in. Have a reliable way
 		//   to settle ties since that will be common. In the actual game, skill
 		//   ties between the empire and rebels are settled by alternating which
@@ -167,24 +165,23 @@ public class Game {
 			activeShip = this.activateNextShip();
 		}
 	}
-	public void assignActionForActiveShip(int actionIndexInShipType, String[] actionData) {
-		Ship activeShip = this.getActiveShip();
-		AvailableAction availableAction = activeShip.type.actions[actionIndexInShipType];
-		Action action = availableAction.createInstance(activeShip, actionData);
-		activeShip.action = action;
+	public void assignActionForShip(Player player, int shipID, int actionIndexInShipType, String[] actionData) {
+		Ship ship = player.getShipByID(shipID);
+		AvailableAction availableAction = ship.type.actions[actionIndexInShipType];
+		Action action = availableAction.createInstance(ship, actionData);
+		ship.action = action;
 		// Now wait for everyone to be ready.
-		this.setGameStatus(GameStatus.MOVING);
 	}
 	public Player getPlayerByName(String playerName) {
 		List<Player> targets = this.players.stream().filter((x) -> x.name.equals(playerName)).toList();
 		Player target = targets.get(0);
 		return target;
 	}
-	private void beginCombatPhase() {
-		this.setGameStatus(GameStatus.COMBAT);
-	}
 	public void markReady(String playerName) {
 		Player target = getPlayerByName(playerName);
+		markReady(target);
+	}
+	public void markReady(Player target) {
 		// is ready :)
 		target.setReady(true);
 		// Are we all ready?
@@ -194,12 +191,7 @@ public class Game {
 		}
 		if (allready) {
 			// start the next phase, whichever that is.
-			if (this.status == GameStatus.STARTING) this.startPlanningPhase();
-			else if (this.status == GameStatus.MOVING) this.finishMovingPhase();
-			else if (this.status == GameStatus.COMBAT) this.startPlanningPhase();
-			else {
-				System.out.println("state is incorrect: player '" + playerName + "' marked ready (and all players are ready) when server status is " + this.status.name());
-			}
+			this.beginNextGamePhase();
 		}
 	}
 	public void finishMovingPhase() {
@@ -213,25 +205,43 @@ public class Game {
 				moveShip.apply(activeShip);
 			}
 			activeShip.maneuver = null;
-			// // Execute the action
-			// if (activeShip.action != null) {
-			// 	// T ODO: what if the action fails?
-			// 	activeShip.action.execute();
-			// 	activeShip.action = null;
-			// }
+			// Execute the action
+			if (activeShip.action != null) {
+				// TODO: what if the action fails?
+				activeShip.action.execute();
+				activeShip.action = null;
+			}
 			// Inform the clients
 			this.broadcast(new Event.ShipDoneMoving(activeShip.id));
 		}
-		// Continue
-		this.beginCombatPhase();
-	}
-	public void startPlanningPhase() {
-		this.setGameStatus(GameStatus.PLANNING);
 	}
 	public static enum GameStatus {
 		STARTING,
 		PLANNING,
 		MOVING,
+		SELECTING_ACTIONS,
+		EXECUTING_ACTIONS,
 		COMBAT
+	}
+	public void beginNextGamePhase() {
+		switch (this.status) {
+			case STARTING: this.setGameStatus(GameStatus.PLANNING);
+				break;
+			case PLANNING: this.setGameStatus(GameStatus.MOVING);
+				this.initMovingPhase();
+				break;
+			case MOVING:
+				this.finishMovingPhase();
+				this.setGameStatus(GameStatus.SELECTING_ACTIONS);
+				break;
+			case SELECTING_ACTIONS: this.setGameStatus(GameStatus.EXECUTING_ACTIONS);
+				break;
+			case EXECUTING_ACTIONS: this.setGameStatus(GameStatus.COMBAT);
+				break;
+			case COMBAT: this.setGameStatus(GameStatus.PLANNING);
+				break;
+			default:
+				throw new Error("The state is wrong! (Somehow.)");
+		}
 	}
 }

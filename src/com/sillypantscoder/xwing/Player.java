@@ -23,7 +23,7 @@ public class Player {
 		events.add(event);
 	}
 	public void fire(Event event) {
-		event.fire(this); // this will turn around and call fire(String) after calling Event.fire(Player)
+		event.fire(this); // this will turn around and call Player.fire(String) after calling Event.fire(Player)
 	}
 	public String getEvents() {
 		String r = String.join("\n\n", this.events.toArray(new String[0]));

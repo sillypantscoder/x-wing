@@ -17,7 +17,7 @@ if (_players == null || !(_players instanceof HTMLDivElement)) throw new Error("
 /** @type {HTMLDivElement} */
 var playerBar = _players;
 
-/** @type {"starting" | "planning" | "moving" | "combat"} */
+/** @type {"starting" | "planning" | "moving" | "selecting_actions" | "executing_actions" | "combat"} */
 var gamePhase = "starting"
 /** @type {Player[]} */
 var players = []
@@ -334,6 +334,8 @@ class Ship {
 		// planning
 		/** @type {Maneuver | null} */
 		this.maneuver = null
+		/** @type {{ id: number, data: string[] } | null} */
+		this.action = null
 		/** @type {Element[]} */
 		this.previewElements = []
 		// tokens
@@ -393,8 +395,8 @@ class Ship {
 		throw new Error("Ship with id " + this.id + " does not have an owner")
 	}
 	emphasized() {
-		if (gamePhase == "planning") return (this.maneuver == null) && this.ownedByMe()
-		// if (gamePhase == "waiting_for_action") return (this == activeShip) && this.ownedByMe()
+		if (gamePhase == "planning") return this.maneuver == null && this.ownedByMe()
+		if (gamePhase == "selecting_actions") return this.action == null && this.ownedByMe()
 		return false
 	}
 	click() {
@@ -402,6 +404,8 @@ class Ship {
 			this.menu = new MoveShipMenu(this)
 		} else if (gamePhase == "planning" && this.ownedByMe()) {
 			this.menu = new ManeuverMenu(this)
+		} else if (gamePhase == "selecting_actions" && this.ownedByMe()) {
+			this.menu = new ActionMenu(this)
 		} else {
 			this.menu = new BlankMenu(this)
 		}
@@ -576,6 +580,43 @@ class ManeuverMenu extends Menu {
 		}
 	}
 }
+class ActionMenu extends Menu {
+	/**
+	 * @param {Ship} ship
+	 */
+	constructor(ship) {
+		super(ship)
+		this.main.setAttribute("style", `width: max-content;`)
+		// Add the list of actions
+		var mainActions = document.createElement("div")
+		this.main.appendChild(mainActions)
+		// Loop through all the actions this ship can perform
+		for (var i = 0; i < ship.type.actions.length; i++) {
+			var availableAction = ship.type.actions[i]
+			var action = actions[availableAction.actionName]
+			// Display the action
+			var m = document.createElement("div")
+			mainActions.appendChild(m)
+			m.appendChild(document.createTextNode(action.title + ": "))
+			// Buttons
+			var keys = Object.keys(action.select)
+			for (var b = 0; b < keys.length; b++) {
+				var e = document.createElement("button")
+				m.appendChild(e);
+				e.innerText = keys[b];
+				// click
+				((_menu, e, actionIndex, result) => {
+					e.addEventListener("mouseup", () => {
+						ship.action = { id: actionIndex, data: result }
+						// Close menu
+						_menu.closeMenu()
+						setStatusBar()
+					})
+				})(this, e, i, action.select[keys[b]]);
+			}
+		}
+	}
+}
 /** @type {Object.<string, { title: string, select: Object.<string, string[]>, execute: (ship: Ship, data: string[]) => void}>} */
 var actions = {
 	"focus": {
@@ -646,7 +687,7 @@ function setStatusBar() {
 	statusBar.appendChild(indicator)
 	indicator.classList.add("statusindicator")
 	var phase = gamePhase[0].toUpperCase() + gamePhase.substring(1)
-	phase = phase.replace("Waiting_for_action", "Moving")
+	phase = phase.replace("Selecting_actions", "Actions").replace("Executing_actions", "Actions")
 	indicator.innerText = phase + " Phase"
 	if (gamePhase == "starting") {
 		// add ships
@@ -693,42 +734,7 @@ function setStatusBar() {
 			submitManeuvers()
 			e.remove()
 		})
-	// } else if (gamePhase == "waiting_for_action") {
-	// 	if (activeShip == null) return
-	// 	if (activeShip.ownedByMe()) {
-	// 		// Add the list of actions
-	// 		var mainActions = document.createElement("div")
-	// 		statusBar.appendChild(mainActions)
-	// 		for (var i = 0; i < activeShip.type.actions.length; i++) {
-	// 			var availableAction = activeShip.type.actions[i]
-	// 			var action = actions[availableAction.actionName]
-	// 			var m = document.createElement("div")
-	// 			mainActions.appendChild(m)
-	// 			m.appendChild(document.createTextNode(action.title + ": "))
-	// 			// Buttons
-	// 			var keys = Object.keys(action.select)
-	// 			for (var b = 0; b < keys.length; b++) {
-	// 				var e = document.createElement("button")
-	// 				m.appendChild(e);
-	// 				e.innerText = keys[b];
-	// 				// click
-	// 				((e, actionIndex, result) => {
-	// 					e.addEventListener("click", () => {
-	// 						mainActions.querySelectorAll("button").forEach((v) => v.setAttribute("disabled", "true"))
-	// 						post("/set_action", [actionIndex, ...result].join("\n"))
-	// 					})
-	// 				})(e, i, action.select[keys[b]]);
-	// 			}
-	// 		}
-	// 	} else {
-	// 		var mainActions = document.createElement("div")
-	// 		statusBar.appendChild(mainActions)
-	// 		var m = document.createElement("div")
-	// 		mainActions.appendChild(m)
-	// 		// TODO: Make player name bold
-	// 		m.innerText = "Wait for " + activeShip.getOwner().name + " to select an action"
-	// 	}
-	} else if (gamePhase == "moving") {
+	} else if (gamePhase == "moving" || gamePhase == "executing_actions") {
 		// add ready button
 		var mainReady = document.createElement("div")
 		statusBar.appendChild(mainReady)
@@ -739,6 +745,25 @@ function setStatusBar() {
 		e.addEventListener("click", () => {
 			post("/ready", my_name)
 			e.disabled = true
+		})
+	} else if (gamePhase == "selecting_actions") {
+		// add ready button
+		var mainReady = document.createElement("div")
+		statusBar.appendChild(mainReady)
+		var e = document.createElement("button")
+		mainReady.appendChild(e)
+		e.innerText = "Submit!"
+		// disabled?
+		var disabled = false
+		if (me == null) disabled = true
+		else for (var i = 0; i < me.ships.length; i++) {
+			if (me.ships[i].action == null) disabled = true
+		}
+		if (disabled) e.setAttribute("disabled", "true")
+		// click
+		e.addEventListener("click", () => {
+			submitActions()
+			e.remove()
 		})
 	} else if (gamePhase == "combat") {
 		// add ready button
@@ -800,21 +825,25 @@ function handleEventResponse(data) {
 			ship.rot = Number(items[i][4])
 			ship.updateStyle()
 		} else if (items[i][0] == "status") {
-			/** @type {Object.<string, "starting" | "planning" | "moving" | "combat">} */
+			/** @type {Object.<string, "starting" | "planning" | "moving" | "selecting_actions" | "executing_actions" | "combat">} */
 			var m = {
 				"STARTING": "starting",
 				"PLANNING": "planning",
-				// "WAITINGFORACTION": "waiting_for_action",
 				"MOVING": "moving",
+				"SELECTING_ACTIONS": "selecting_actions",
+				"EXECUTING_ACTIONS": "executing_actions",
 				"COMBAT": "combat"
 			}
-			/** @type {"starting" | "planning" | "moving" | "combat"} */
+			/** @type {"starting" | "planning" | "moving" | "selecting_actions" | "executing_actions" | "combat"} */
 			var newStatus = m[items[i][1]]
 			gamePhase = newStatus;
 			activeShip = null;
 			setStatusBar()
 			for (var j = 0; j < ships.length; j++) {
 				ships[j].updateStyle()
+				if (gamePhase == "selecting_actions") {
+					ships[j].action = null
+				}
 			}
 		} else if (items[i][0] == "setmaneuver") {
 			var shipID = Number(items[i][1])
@@ -899,6 +928,13 @@ function submitManeuvers() {
 	post("/maneuvers", [
 		my_name,
 		...me.ships.map((v) => v.maneuver ? v.id + " " + v.type.maneuvers.indexOf(v.maneuver) : "Error!")
+	].join("\n"))
+}
+function submitActions() {
+	if (me == null) return
+	post("/set_actions", [
+		my_name,
+		...me.ships.map((v) => v.action ? v.id + " " + v.action.id + " " + v.action.data.join(" ") : (console.error("error!!!!! the action for ship " + v.id + " is not set :(") ?? "Error!"))
 	].join("\n"))
 }
 
